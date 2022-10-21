@@ -21,8 +21,10 @@ class AuthController extends Controller
     {
         $validator = Validator::make(request()->all(), [
             'name' => 'required|string|between:2,100',
-            'email' => 'required|string|email|max:100|unique:users',
+            'email' => 'required|string|email|max:100|unique:user',
             'password' => 'required|string|min:6',
+            'instagram_id' => 'required|int|unique:user',
+            'role' => 'required|string|in:' . implode(',', config('enums.registerable_role')),
         ]);
 
         if ($validator->fails()) {
@@ -30,9 +32,12 @@ class AuthController extends Controller
         }
 
         $user = User::create(array_merge(
-            request()->only(['name', 'email']),
-            ['password' => bcrypt(request()->password)]
+            request()->only(['name', 'email', 'instagram_id']),
+            ['password' => bcrypt(request()->password)],
         ));
+
+        $user->assignRole(config('enums.role.user'));
+        $user->assignRole(request()->role);
 
         if ($user) {
             // return response()->json([
@@ -56,7 +61,7 @@ class AuthController extends Controller
     {
         $credentials = request(['email', 'password']);
 
-        if (! $token = auth()->attempt($credentials)) {
+        if (!$token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -105,6 +110,7 @@ class AuthController extends Controller
     protected function respondWithToken($token)
     {
         return response()->json([
+            'roles' => auth()->user()->roles->pluck('name'),
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60
