@@ -13,23 +13,13 @@ return [
     'partner' => 'PARTNER',
     'customer' => 'CUSTOMER',
   ],
-  'story_transaction' => [
+  'transaction_type' => [
     'debit' => 'D',
     'credit' => 'C',
   ],
   'story_status' => [
-    'pending' => 0,
+    'review' => 0,
     'approved' => 1,
     'rejected' => 2,
-  ],
-  'cashback_status' => [
-    'pending' => 0,
-    'approved' => 1,
-    'rejected' => 2,
-  ],
-  'withdrawal_status' => [
-    'processing' => 0,
-    'success' => 1,
-    'failed' => 2,
   ],
 ];

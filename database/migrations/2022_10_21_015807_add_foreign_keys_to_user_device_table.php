@@ -14,8 +14,7 @@ class AddForeignKeysToUserDeviceTable extends Migration
     public function up()
     {
         Schema::table('user_device', function (Blueprint $table) {
-            $table->foreign('refresh_token_id')->references(['id'])->on('refresh_token')->onUpdate('RESTRICT')->onDelete('RESTRICT');
-            $table->foreign('user_notification_id')->references(['id'])->on('user_notification')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('refresh_token_id')->references(['id'])->on('refresh_token')->onUpdate('CASCADE')->onDelete('CASCADE');
         });
     }
 
@@ -28,7 +27,6 @@ class AddForeignKeysToUserDeviceTable extends Migration
     {
         Schema::table('user_device', function (Blueprint $table) {
             $table->dropForeign('user_device_refresh_token_id_foreign');
-            $table->dropForeign('user_device_user_notification_id_foreign');
         });
     }
 }

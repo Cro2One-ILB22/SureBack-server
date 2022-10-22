@@ -14,8 +14,7 @@ class AddForeignKeysToUserNotificationTable extends Migration
     public function up()
     {
         Schema::table('user_notification', function (Blueprint $table) {
-            $table->foreign('notification_topic_id')->references(['id'])->on('notification_topic')->onUpdate('RESTRICT')->onDelete('RESTRICT');
-            $table->foreign('user_id')->references(['id'])->on('user')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('notification_subscription_id')->references(['id'])->on('notification_subscription')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -27,8 +26,7 @@ class AddForeignKeysToUserNotificationTable extends Migration
     public function down()
     {
         Schema::table('user_notification', function (Blueprint $table) {
-            $table->dropForeign('user_notification_notification_topic_id_foreign');
-            $table->dropForeign('user_notification_user_id_foreign');
+            $table->dropForeign('user_notification_notification_subscription_id_foreign');
         });
     }
 }

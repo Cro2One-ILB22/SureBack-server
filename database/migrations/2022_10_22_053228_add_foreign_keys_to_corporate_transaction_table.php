@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddForeignKeysToDepositTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,7 @@ class AddForeignKeysToDepositTable extends Migration
      */
     public function up()
     {
-        Schema::table('deposit', function (Blueprint $table) {
-            $table->foreign('corporate_account_id')->references(['id'])->on('corporate_account')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+        Schema::table('corporate_transaction', function (Blueprint $table) {
             $table->foreign('financial_transaction_id')->references(['id'])->on('financial_transaction')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
@@ -26,9 +25,8 @@ class AddForeignKeysToDepositTable extends Migration
      */
     public function down()
     {
-        Schema::table('deposit', function (Blueprint $table) {
-            $table->dropForeign('deposit_corporate_account_id_foreign');
-            $table->dropForeign('deposit_financial_transaction_id_foreign');
+        Schema::table('corporate_transaction', function (Blueprint $table) {
+            $table->dropForeign('corporate_transaction_financial_transaction_id_foreign');
         });
     }
-}
+};

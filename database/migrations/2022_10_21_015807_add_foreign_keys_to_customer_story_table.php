@@ -14,8 +14,8 @@ class AddForeignKeysToCustomerStoryTable extends Migration
     public function up()
     {
         Schema::table('customer_story', function (Blueprint $table) {
-            $table->foreign('partner_id')->references(['id'])->on('user')->onUpdate('RESTRICT')->onDelete('RESTRICT');
             $table->foreign('customer_id')->references(['id'])->on('user')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('story_token_id')->references(['id'])->on('story_token')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -27,8 +27,8 @@ class AddForeignKeysToCustomerStoryTable extends Migration
     public function down()
     {
         Schema::table('customer_story', function (Blueprint $table) {
-            $table->dropForeign('customer_story_partner_id_foreign');
             $table->dropForeign('customer_story_customer_id_foreign');
+            $table->dropForeign('customer_story_story_token_id_foreign');
         });
     }
 }

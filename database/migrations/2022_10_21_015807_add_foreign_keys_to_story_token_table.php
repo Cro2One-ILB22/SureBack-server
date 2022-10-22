@@ -14,7 +14,7 @@ class AddForeignKeysToStoryTokenTable extends Migration
     public function up()
     {
         Schema::table('story_token', function (Blueprint $table) {
-            $table->foreign('story_id')->references(['id'])->on('customer_story')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('partner_id')->references(['id'])->on('user')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -26,7 +26,7 @@ class AddForeignKeysToStoryTokenTable extends Migration
     public function down()
     {
         Schema::table('story_token', function (Blueprint $table) {
-            $table->dropForeign('story_token_story_id_foreign');
+            $table->dropForeign('story_token_partner_id_foreign');
         });
     }
 }

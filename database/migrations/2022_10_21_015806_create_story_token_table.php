@@ -15,8 +15,10 @@ class CreateStoryTokenTable extends Migration
     {
         Schema::create('story_token', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('story_id');
+            $table->string('token');
+            $table->foreignId('partner_id');
             $table->date('expire_at')->default(now()->addHours(18));
+            $table->boolean('is_used')->default(false);
             $table->timestamps();
         });
     }

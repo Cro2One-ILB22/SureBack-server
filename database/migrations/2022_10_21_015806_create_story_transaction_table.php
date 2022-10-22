@@ -15,11 +15,8 @@ class CreateStoryTransactionTable extends Migration
     {
         Schema::create('story_transaction', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('story_id');
-            $table->integer('amount');
-            $table->integer('balance_change');
-            $table->integer('point_change');
-            $table->enum('type', config('enums.story_transaction'));
+            $table->foreignId('story_token_id');
+            $table->foreignId('transaction_id');
             $table->timestamps();
         });
     }

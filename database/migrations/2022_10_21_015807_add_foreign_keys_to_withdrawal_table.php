@@ -15,6 +15,7 @@ class AddForeignKeysToWithdrawalTable extends Migration
     {
         Schema::table('withdrawal', function (Blueprint $table) {
             $table->foreign('bank_account_id')->references(['id'])->on('bank_account')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('financial_transaction_id')->references(['id'])->on('financial_transaction')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -27,6 +28,7 @@ class AddForeignKeysToWithdrawalTable extends Migration
     {
         Schema::table('withdrawal', function (Blueprint $table) {
             $table->dropForeign('withdrawal_bank_account_id_foreign');
+            $table->dropForeign('withdrawal_financial_transaction_id_foreign');
         });
     }
 }

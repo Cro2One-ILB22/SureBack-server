@@ -16,8 +16,7 @@ class CreateCashbackTable extends Migration
         Schema::create('cashback', function (Blueprint $table) {
             $table->id();
             $table->foreignId('story_id');
-            $table->integer('amount')->default(0);
-            $table->enum('status', config('enums.cashback_status'))->default(config('enums.cashback_status.pending'));
+            $table->foreignId('transaction_id');
             $table->string('note')->nullable();
             $table->timestamps();
         });

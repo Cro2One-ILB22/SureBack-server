@@ -16,11 +16,12 @@ class CreateCustomerStoryTable extends Migration
         Schema::create('customer_story', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id');
-            $table->foreignId('partner_id');
-            $table->string('story_token');
+            $table->foreignId('story_token_id');
             $table->string('instagram_story_id');
+            $table->string('instagram_id');
             $table->string('image_uri');
-            $table->enum('status', config('enums.story_status'))->default(config('enums.story_status.pending'));
+            $table->string('video_uri')->nullable();
+            $table->enum('status', config('enums.story_status'))->default(config('enums.story_status')['review']);
             $table->string('note')->nullable();
             $table->timestamps();
         });

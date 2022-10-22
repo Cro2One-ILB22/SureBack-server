@@ -15,6 +15,7 @@ class AddForeignKeysToCashbackTable extends Migration
     {
         Schema::table('cashback', function (Blueprint $table) {
             $table->foreign('story_id')->references(['id'])->on('customer_story')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('transaction_id')->references(['id'])->on('financial_transaction')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -27,6 +28,7 @@ class AddForeignKeysToCashbackTable extends Migration
     {
         Schema::table('cashback', function (Blueprint $table) {
             $table->dropForeign('cashback_story_id_foreign');
+            $table->dropForeign('cashback_transaction_id_foreign');
         });
     }
 }

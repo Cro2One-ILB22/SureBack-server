@@ -15,9 +15,9 @@ class CreateCorporateAccountTable extends Migration
     {
         Schema::create('corporate_account', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bank_id');
+            $table->foreignId('bank_id')->nullable();
             $table->foreignId('payment_method_id');
-            $table->bigInteger('number');
+            $table->unsignedBigInteger('number');
             $table->timestamps();
         });
     }

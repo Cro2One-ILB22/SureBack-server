@@ -16,7 +16,6 @@ class CreateUserDeviceTable extends Migration
         Schema::create('user_device', function (Blueprint $table) {
             $table->id();
             $table->foreignId('refresh_token_id');
-            $table->foreignId('user_notification_id');
             $table->string('device_id')->nullable();
             $table->string('device_model')->nullable();
             $table->string('device_os')->nullable();

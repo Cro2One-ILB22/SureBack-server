@@ -16,8 +16,7 @@ class CreateDepositTable extends Migration
         Schema::create('deposit', function (Blueprint $table) {
             $table->id();
             $table->foreignId('corporate_account_id');
-            $table->foreignId('user_id');
-            $table->integer('amount');
+            $table->foreignId('financial_transaction_id');
             $table->string('proof')->nullable();
             $table->timestamps();
         });
