@@ -13,8 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('refresh_tokens', function (Blueprint $table) {
-            $table->foreign('user_id')->references(['id'])->on('users')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+        Schema::create('user_user_devices', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id');
+            $table->foreignId('user_device_id');
+            $table->timestamps();
         });
     }
 
@@ -25,8 +28,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('refresh_tokens', function (Blueprint $table) {
-            $table->dropForeign('refresh_tokens_user_id_foreign');
-        });
+        Schema::dropIfExists('user_user_devices');
     }
 };

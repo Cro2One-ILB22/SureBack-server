@@ -15,13 +15,12 @@ return new class extends Migration
     {
         Schema::create('user_devices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('refresh_token_id');
-            $table->string('device_id')->nullable();
+            $table->string('device_id')->nullable()->unique();
             $table->string('device_model')->nullable();
             $table->string('device_os')->nullable();
             $table->string('device_os_version')->nullable();
             $table->string('device_name')->nullable();
-            $table->string('notification_token');
+            $table->string('notification_token')->unique();
             $table->timestamps();
         });
     }
