@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 Route::group([
-    'middleware' => 'api',
     'prefix' => 'auth'
 ], function ($router) {
     Route::post('register', [AuthController::class, 'register'])->name('register');

@@ -14,7 +14,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register']]);
+        $this->middleware('auth:sanctum', ['except' => ['login', 'register']]);
     }
 
     public function register()
@@ -44,7 +44,7 @@ class AuthController extends Controller
             //     'message' => 'User successfully registered',
             //     'user' => $user
             // ], 201);
-            return $this->login();
+            return $this->respondWithToken($user);
         } else {
             return response()->json([
                 'message' => 'User registration failed'
@@ -61,11 +61,11 @@ class AuthController extends Controller
     {
         $credentials = request(['email', 'password']);
 
-        if (!$token = auth()->attempt($credentials)) {
+        if (!auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        return $this->respondWithToken($token);
+        return $this->respondWithToken(auth()->user());
     }
 
     /**
@@ -85,20 +85,20 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        auth()->logout();
+        auth()->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Successfully logged out']);
     }
 
-    /**
-     * Refresh a token.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function refresh()
-    {
-        return $this->respondWithToken(auth()->refresh());
-    }
+    // /**
+    //  * Refresh a token.
+    //  *
+    //  * @return \Illuminate\Http\JsonResponse
+    //  */
+    // public function refresh()
+    // {
+    //     return $this->respondWithToken(auth()->refresh());
+    // }
 
     /**
      * Get the token array structure.
@@ -107,13 +107,17 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithToken($token)
+    protected function respondWithToken(User $user)
     {
+        $roles = $user->roles->pluck('name')->all();
+        $expires_at = now()->addMinutes(config('sanctum.expiration'));
+        $token = $user->createToken($user->id, $roles, $expires_at);
+
         return response()->json([
-            'roles' => auth()->user()->roles->pluck('name'),
-            'access_token' => $token,
+            'roles' => $roles,
+            'access_token' => $token->plainTextToken,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60
+            'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
         ]);
     }
 }
