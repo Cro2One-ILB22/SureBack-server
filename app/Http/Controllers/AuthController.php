@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
@@ -36,14 +37,10 @@ class AuthController extends Controller
             ['password' => bcrypt(request()->password)],
         ));
 
-        $user->assignRole(config('enums.role.user'));
-        $user->assignRole(request()->role);
+        $user->roles()->attach(Role::where('slug', 'user')->first());
+        $user->roles()->attach(Role::where('slug', request()->role)->first());
 
         if ($user) {
-            // return response()->json([
-            //     'message' => 'User successfully registered',
-            //     'user' => $user
-            // ], 201);
             return $this->respondWithToken($user);
         } else {
             return response()->json([
@@ -109,7 +106,7 @@ class AuthController extends Controller
      */
     protected function respondWithToken(User $user)
     {
-        $roles = $user->roles->pluck('name')->all();
+        $roles = $user->roles->pluck('slug')->all();
         $expires_at = now()->addMinutes(config('sanctum.expiration'));
         $token = $user->createToken($user->id, $roles, $expires_at);
 

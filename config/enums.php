@@ -2,16 +2,15 @@
 
 return [
   'role' => [
-    'super_admin' => 'SUPER_ADMIN',
-    'admin' => 'ADMIN',
-    'user' => 'USER',
-    'guest' => 'GUEST',
-    'partner' => 'PARTNER',
-    'customer' => 'CUSTOMER',
+    'super_admin' => 'Super Admin',
+    'admin' => 'Admin',
+    'user' => 'User',
+    'partner' => 'Partner',
+    'customer' => 'Customer',
   ],
   'registerable_role' => [
-    'partner' => 'PARTNER',
-    'customer' => 'CUSTOMER',
+    'partner',
+    'customer',
   ],
   'transaction_type' => [
     'debit' => 'D',

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
 {
@@ -14,10 +14,12 @@ class RoleSeeder extends Seeder
      */
     public function run()
     {
-        foreach (config('enums.role') as $role) {
-            if (!Role::where('name', $role)->exists()) {
-                Role::create(['name' => $role]);
-            }
+        foreach (config('enums.role') as $slug => $name) {
+            Role::firstOrCreate([
+                'slug' => $slug,
+            ], [
+                'name' => $name,
+            ]);
         }
     }
 }
