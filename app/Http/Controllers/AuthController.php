@@ -21,9 +21,9 @@ class AuthController extends Controller
     {
         $validator = Validator::make(request()->all(), [
             'name' => 'required|string|between:2,100',
-            'email' => 'required|string|email|max:100|unique:user',
+            'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|min:6',
-            'instagram_id' => 'required|int|unique:user',
+            'instagram_id' => 'required|int|unique:users',
             'role' => 'required|string|in:' . implode(',', config('enums.registerable_role')),
         ]);
 
