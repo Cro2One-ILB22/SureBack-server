@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('cashbacks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('story_id');
-            $table->foreignId('transaction_id');
+            $table->foreignId('financial_transaction_id');
             $table->string('note')->nullable();
             $table->timestamps();
         });

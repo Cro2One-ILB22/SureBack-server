@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('cashbacks', function (Blueprint $table) {
             $table->foreign('story_id')->references(['id'])->on('customer_stories')->onUpdate('RESTRICT')->onDelete('RESTRICT');
-            $table->foreign('transaction_id')->references(['id'])->on('financial_transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('financial_transaction_id')->references(['id'])->on('financial_transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -28,7 +28,7 @@ return new class extends Migration
     {
         Schema::table('cashbacks', function (Blueprint $table) {
             $table->dropForeign('cashbacks_story_id_foreign');
-            $table->dropForeign('cashbacks_transaction_id_foreign');
+            $table->dropForeign('cashbacks_financial_transaction_id_foreign');
         });
     }
 };

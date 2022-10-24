@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('story_transactions', function (Blueprint $table) {
             $table->foreign('story_token_id')->references('id')->on('story_tokens')->onUpdate('RESTRICT')->onDelete('RESTRICT');
-            $table->foreign('transaction_id')->references('id')->on('financial_transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('financial_transaction_id')->references('id')->on('financial_transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -28,7 +28,7 @@ return new class extends Migration
     {
         Schema::table('story_transactions', function (Blueprint $table) {
             $table->dropForeign('story_transactions_story_token_id_foreign');
-            $table->dropForeign('story_transactions_transaction_id_foreign');
+            $table->dropForeign('story_transactions_financial_transaction_id_foreign');
         });
     }
 };

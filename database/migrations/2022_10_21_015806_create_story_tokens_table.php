@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('token');
             $table->foreignId('partner_id');
-            $table->date('expire_at')->default(now()->addHours(18));
+            $table->date('expires_at')->default(now()->addHours(18));
             $table->boolean('is_used')->default(false);
             $table->timestamps();
         });

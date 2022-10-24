@@ -13,7 +13,7 @@ class SendPushNotification extends Command
      *
      * @var string
      */
-    protected $signature = 'message:send {registrationToken*}';
+    protected $signature = 'message:send {title} {--body=body} {--token=*} {--topic=} {--condition=} {--image=} {--data=}';
 
     /**
      * The console command description.
@@ -30,8 +30,80 @@ class SendPushNotification extends Command
     public function handle()
     {
         $firebaseProjectId = env('FIREBASE_PROJECT_ID');
-        $registrationTokens = $this->argument('registrationToken');
+        $title = $this->argument('title');
+        $body = $this->option('body');
+        $image = $this->option('image');
+        $topic = $this->option('topic');
+        $condition = $this->option('condition');
+        $registrationTokens = $this->option('token');
+        $data = $this->option('data');
 
+        $accessToken = $this->getAccessToken();
+
+        $reqBody = [
+            'message' => [
+                'notification' => [
+                    'title' => $title,
+                ],
+            ]
+        ];
+
+        if ($data) {
+            $reqBody['message']['data'] = json_decode($data);
+        }
+
+        if ($body) {
+            $reqBody['message']['notification']['body'] = $body;
+        }
+
+        if ($image) {
+            $reqBody['message']['android'] = [
+                'notification' => [
+                    'image' => $image,
+                    'sound' => 'default',
+                ],
+            ];
+
+            $reqBody['message']['apns'] = [
+                'headers' => [
+                    "apns-priority" => "10",
+                ],
+                'payload' => [
+                    'aps' => [
+                        'sound' => 'default',
+                    ],
+                ],
+                'fcm_options' => [
+                    'image' => $image,
+                ],
+            ];
+
+            $reqBody['message']['webpush'] = [
+                'headers' => [
+                    'image' => $image,
+                ],
+            ];
+        }
+
+        if ($topic) {
+            $reqBody['message']['topic'] = $topic;
+        } elseif ($condition) {
+            $reqBody['message']['condition'] = $condition;
+        } else {
+            foreach ($registrationTokens as $registrationToken) {
+                $reqBody['message']['token'] = $registrationToken;
+
+                $this->sendNotification($firebaseProjectId, $accessToken, $reqBody);
+            }
+            return Command::SUCCESS;
+        }
+
+        $this->sendNotification($firebaseProjectId, $accessToken, $reqBody);
+        return Command::SUCCESS;
+    }
+
+    private function getAccessToken()
+    {
         // specify the path to your application credentials
         $authPath = storage_path('app/google/auth.json');
         putenv('GOOGLE_APPLICATION_CREDENTIALS=' . $authPath);
@@ -43,32 +115,19 @@ class SendPushNotification extends Command
         $credentials = ApplicationDefaultCredentials::getCredentials($scopes);
         $accessToken = $credentials->fetchAuthToken()['access_token'];
 
-        // send notification
-        foreach ($registrationTokens as $registrationToken) {
-            $data = [
-                'message' => [
-                    'notification' => [
-                        'title' => 'Breaking News',
-                        'body' => 'New news story available.'
-                    ],
-                    'data' => [
-                        'story_id' => 'story_12345'
-                    ],
-                    // 'condition' => "'test' in topics || 'testing' in topics",
-                    // 'topic' => 'test',
-                    'token' => $registrationToken
-                ]
-            ];
-            $json = json_encode($data);
-            $client = new Client();
-            $client->post('https://fcm.googleapis.com/v1/projects/' . $firebaseProjectId . '/messages:send', [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $accessToken,
-                    'Content-Type' => 'application/json'
-                ],
-                'body' => $json
-            ]);
-        }
-        return Command::SUCCESS;
+        return $accessToken;
+    }
+
+    private function sendNotification($firebaseProjectId, $accessToken, $reqBody)
+    {
+        $json = json_encode($reqBody);
+        $client = new Client();
+        $client->post('https://fcm.googleapis.com/v1/projects/' . $firebaseProjectId . '/messages:send', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $accessToken,
+                'Content-Type' => 'application/json'
+            ],
+            'body' => $json
+        ]);
     }
 }

@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('story_transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('story_token_id');
-            $table->foreignId('transaction_id');
+            $table->foreignId('financial_transaction_id');
             $table->timestamps();
         });
     }

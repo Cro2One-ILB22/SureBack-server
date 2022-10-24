@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id');
             $table->foreignId('bank_id');
+            $table->unsignedBigInteger('account_number');
             $table->timestamps();
         });
     }
