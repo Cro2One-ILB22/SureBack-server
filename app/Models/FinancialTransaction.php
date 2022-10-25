@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class FinancialTransaction extends Model
+{
+    use HasFactory;
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(TransactionCategory::class);
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(TransactionStatus::class);
+    }
+
+    public function withdrawal()
+    {
+        return $this->hasOne(Withdrawal::class);
+    }
+
+    public function successfulTransaction()
+    {
+        return $this->hasMany(SuccessfulTransaction::class);
+    }
+
+    public function corporateTransaction()
+    {
+        return $this->hasOne(CorporateTransaction::class);
+    }
+
+    public function cashback()
+    {
+        return $this->hasOne(Cashback::class);
+    }
+
+    public function deposit()
+    {
+        return $this->hasOne(Deposit::class);
+    }
+}

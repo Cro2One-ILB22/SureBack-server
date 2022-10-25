@@ -50,4 +50,34 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'user_roles');
     }
+
+    public function devices()
+    {
+        return $this->belongsToMany(UserDevice::class, 'user_user_devices');
+    }
+
+    public function notificationSubscriptions()
+    {
+        return $this->hasMany(NotificationSubscription::class);
+    }
+
+    public function bankAccounts()
+    {
+        return $this->hasMany(BankAccount::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(FinancialTransaction::class);
+    }
+
+    public function storyTokens()
+    {
+        return $this->hasMany(StoryToken::class, 'partner_id');
+    }
+
+    public function stories()
+    {
+        return $this->hasMany(CustomerStory::class, 'customer_id');
+    }
 }
