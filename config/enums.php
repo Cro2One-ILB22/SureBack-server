@@ -8,6 +8,11 @@ return [
     'partner' => 'Partner',
     'customer' => 'Customer',
   ],
+  'otp_factor' => [
+    'email',
+    'sms',
+    'instagram',
+  ],
   'registerable_role' => [
     'partner',
     'customer',

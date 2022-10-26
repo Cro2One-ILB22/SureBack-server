@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Services\InstagramService;
+use App\Services\OTPService;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -15,25 +17,84 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:sanctum', ['except' => ['login', 'register']]);
+        $this->middleware('auth:sanctum', ['except' => ['login', 'register', 'getInstagramOTP', 'verifyInstagramOTP']]);
     }
 
-    public function register()
+    public function getInstagramOTP()
     {
-        $validator = Validator::make(request()->all(), [
-            'name' => 'required|string|between:2,100',
-            'email' => 'required|string|email|max:100|unique:users',
-            'password' => 'required|string|min:6',
-            'instagram_id' => 'required|int|unique:users',
-            'role' => 'required|string|in:' . implode(',', config('enums.registerable_role')),
+        if ($this->getRegisterValidator()->fails()) {
+            return response()->json($this->getRegisterValidator()->errors(), 400);
+        }
+
+        $instagramService = new InstagramService();
+        $instagramProfile = $instagramService->getProfileInfo(request()->username);
+
+        if (!$instagramProfile) {
+            return $this->getInstagramProfileError('Failed to get instagram profile');
+        }
+
+        $instagramId = $instagramProfile['id'];
+        $validator = Validator::make(['instagram_id' => $instagramId], [
+            'instagram_id' => 'unique:users',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
 
+        $otpService = new OTPService();
+        $reqData = ['instagram_id' => $instagramId];
+
+        return response()->json($otpService->generateInstagramOTP($reqData));
+    }
+
+    public function verifyInstagramOTP()
+    {
+        if ($this->getRegisterValidator()->fails()) {
+            return response()->json($this->getRegisterValidator()->errors(), 400);
+        }
+
+        $instagramService = new InstagramService();
+        $instagramProfile = $instagramService->getProfileInfo(request()->all()['username']);
+
+        if (!$instagramProfile) {
+            return $this->getInstagramProfileError('Failed to get instagram profile');
+        }
+
+        $instagramId = $instagramProfile['id'];
+        $validator = Validator::make(['instagram_id' => $instagramId], [
+            'instagram_id' => 'unique:users',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        $otp = $instagramService->getOTPFrom($instagramId);
+        if (!$otp || !is_numeric($otp)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get OTP',
+            ], 400);
+        }
+
+        $otpService = new OTPService();
+        $reqData = [
+            'otp' => $otp,
+            'instagram_id' => $instagramId,
+        ];
+
+        if (!$otpService->verifyInstagramOTP($reqData)) {
+            return response()->json(['message' => 'Invalid OTP'], 401);
+        }
+        return $this->register($instagramId);
+    }
+
+    private function register($instagramId)
+    {
         $user = User::create(array_merge(
-            request()->only(['name', 'email', 'instagram_id']),
+            request()->only(['name', 'email']),
+            ['instagram_id' => $instagramId],
             ['password' => bcrypt(request()->password)],
         ));
 
@@ -116,5 +177,24 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
         ]);
+    }
+
+    private function getRegisterValidator()
+    {
+        return Validator::make(request()->all(), [
+            'name' => 'required|string|between:2,100',
+            'email' => 'required|string|email|max:100|unique:users',
+            'password' => 'required|string|min:6',
+            'username' => 'required|string',
+            'role' => 'required|string|in:' . implode(',', config('enums.registerable_role')),
+        ]);
+    }
+
+    private function getInstagramProfileError($message)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+        ], 400);
     }
 }
