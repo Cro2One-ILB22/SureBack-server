@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InstagramController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,4 +24,11 @@ Route::group([
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('me', [AuthController::class, 'me']);
+});
+
+Route::group([
+    'middleware' => 'auth:sanctum',
+    'prefix' => 'ig'
+], function ($router) {
+    Route::get('profile', [InstagramController::class, 'profile']);
 });

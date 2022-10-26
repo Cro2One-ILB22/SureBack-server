@@ -19,6 +19,25 @@ class InstagramService
     $this->sessionId = config('instagram.session_id');
   }
 
+  function getProfile($username)
+  {
+    $profileInfo =  $this->getProfileInfo($username);
+    return [
+      'id' => $profileInfo['id'],
+      'username' => $profileInfo['username'],
+      'full_name' => $profileInfo['full_name'],
+      'profile_pic_url' => $profileInfo['profile_pic_url'],
+      'profile_pic_url_hd' => $profileInfo['profile_pic_url_hd'],
+      'biography' => $profileInfo['biography'],
+      'external_url' => $profileInfo['external_url'],
+      'is_private' => $profileInfo['is_private'],
+      'is_verified' => $profileInfo['is_verified'],
+      'media_count' => $profileInfo['edge_owner_to_timeline_media']['count'],
+      'follower_count' => $profileInfo['edge_followed_by']['count'],
+      'following_count' => $profileInfo['edge_follow']['count'],
+    ];
+  }
+
   function getProfileInfo($username)
   {
     $path = 'users/web_profile_info/';
