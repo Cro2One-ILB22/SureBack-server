@@ -9,14 +9,23 @@ class CustomerStory extends Model
 {
     use HasFactory;
 
-    public function storyToken()
+    protected $fillable = [
+        'instagram_id'
+    ];
+
+    protected $hidden = [
+        'story_token_id',
+        'customer_id',
+    ];
+
+    public function token()
     {
-        return $this->belongsTo(StoryToken::class, 'customer_id');
+        return $this->belongsTo(StoryToken::class, 'story_token_id');
     }
 
     public function customer()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'customer_id');
     }
 
     public function cashback()

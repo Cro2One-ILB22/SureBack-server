@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('transaction_category_id');
             $table->foreignId('transaction_status_id');
             $table->bigInteger('amount');
+            $table->string('description')->nullable();
             $table->enum('type', config('enums.transaction_type'));
             $table->timestamps();
         });

@@ -9,6 +9,15 @@ class StoryToken extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'token',
+        'expires_at',
+    ];
+
+    protected $hidden = [
+        'partner_id'
+    ];
+
     public function partner()
     {
         return $this->belongsTo(User::class, 'partner_id');
@@ -19,8 +28,8 @@ class StoryToken extends Model
         return $this->hasOne(CustomerStory::class);
     }
 
-    public function transaction()
+    public function transactions()
     {
-        return $this->belongsTo(StoryTransaction::class);
+        return $this->belongsToMany(FinancialTransaction::class, 'story_transactions');
     }
 }

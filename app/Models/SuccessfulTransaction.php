@@ -9,8 +9,15 @@ class SuccessfulTransaction extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'balance_before',
+        'balance_after',
+        'points_before',
+        'points_after',
+    ];
+
     public function transaction()
     {
-        return $this->belongsTo(FinancialTransaction::class);
+        return $this->belongsTo(FinancialTransaction::class, 'financial_transaction_id');
     }
 }

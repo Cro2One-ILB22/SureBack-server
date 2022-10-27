@@ -9,6 +9,13 @@ class CorporateTransaction extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'amount',
+        'type',
+        'balance_before',
+        'balance_after',
+    ];
+
     public function financialTransaction()
     {
         return $this->belongsTo(FinancialTransaction::class);

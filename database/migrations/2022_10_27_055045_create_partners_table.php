@@ -13,11 +13,10 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('story_tokens', function (Blueprint $table) {
+        Schema::create('partners', function (Blueprint $table) {
             $table->id();
-            $table->string('token');
-            $table->foreignId('partner_id');
-            $table->timestamp('expires_at');
+            $table->foreignId('user_id')->constrained();
+            $table->float('cashback_percent')->nullable();
             $table->timestamps();
         });
     }
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('story_tokens');
+        Schema::dropIfExists('partners');
     }
 };

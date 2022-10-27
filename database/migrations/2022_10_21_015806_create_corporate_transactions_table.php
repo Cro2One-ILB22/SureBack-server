@@ -19,6 +19,7 @@ return new class extends Migration
             $table->bigInteger('amount');
             $table->bigInteger('balance_before');
             $table->bigInteger('balance_after');
+            $table->enum('type', config('enums.transaction_type'));
             $table->timestamps();
         });
     }

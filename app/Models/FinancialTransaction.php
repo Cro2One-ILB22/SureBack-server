@@ -9,6 +9,15 @@ class FinancialTransaction extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'amount',
+        'description',
+        'type',
+        // 'reference',
+        // 'reference_type',
+        // 'reference_id',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -16,12 +25,12 @@ class FinancialTransaction extends Model
 
     public function category()
     {
-        return $this->belongsTo(TransactionCategory::class);
+        return $this->belongsTo(TransactionCategory::class, 'transaction_category_id');
     }
 
     public function status()
     {
-        return $this->belongsTo(TransactionStatus::class);
+        return $this->belongsTo(TransactionStatus::class, 'transaction_status_id');
     }
 
     public function withdrawal()

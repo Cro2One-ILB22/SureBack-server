@@ -80,4 +80,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(CustomerStory::class, 'customer_id');
     }
+
+    public function partner()
+    {
+        return $this->hasOne(Partner::class);
+    }
 }

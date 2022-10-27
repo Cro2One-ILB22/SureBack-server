@@ -17,11 +17,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('customer_id');
             $table->foreignId('story_token_id');
-            $table->string('instagram_story_id');
+            $table->string('instagram_story_id')->nullable();
             $table->string('instagram_id');
-            $table->string('image_uri');
+            $table->string('image_uri')->nullable();
             $table->string('video_uri')->nullable();
-            $table->enum('status', config('enums.story_status'))->default(config('enums.story_status')['review']);
+            $table->enum('status', config('enums.story_status'))->nullable();
             $table->string('note')->nullable();
             $table->timestamps();
         });

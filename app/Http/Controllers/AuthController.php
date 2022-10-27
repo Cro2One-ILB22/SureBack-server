@@ -102,6 +102,9 @@ class AuthController extends Controller
         $user->roles()->attach(Role::where('slug', request()->role)->first());
 
         if ($user) {
+            if (request()->role === 'partner') {
+                $user->partner()->create();
+            }
             return $this->respondWithToken($user);
         } else {
             return response()->json([
