@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,10 @@ class StoryToken extends Model
     protected $fillable = [
         'token',
         'expires_at',
+    ];
+
+    protected $appends = [
+        'cashback_amount',
     ];
 
     protected $hidden = [
@@ -26,6 +31,13 @@ class StoryToken extends Model
     public function story()
     {
         return $this->hasOne(CustomerStory::class);
+    }
+
+    public function cashbackAmount(): Attribute
+    {
+        return new Attribute(
+            fn () => $this->transactions()->first()->amount
+        );
     }
 
     public function transactions()

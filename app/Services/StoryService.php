@@ -27,7 +27,7 @@ class StoryService
       $userPayingPower = $this->payStory($user->balance, $user->points, $cashbackAmount);
 
       if (!$userPayingPower) {
-        return response()->json(['message' => 'Insufficient balance'], 400);
+        return null;
       }
 
       $balance_after = $userPayingPower['balance'];
@@ -78,15 +78,40 @@ class StoryService
       $token = hash("crc32", $instagramId . time());
       $storyToken = new StoryToken([
         'token' => $token,
+        'instagram_id' => $instagramId,
         'expires_at' => now()->addHours(18),
       ]);
       $storyToken->partner()->associate($user);
       $storyToken->save();
       $storyToken->transactions()->attach($transaction);
-      return response()->json(['token' => $token]);
+      return [
+        'token' => $token,
+        'cashback_amount' => $cashbackAmount,
+      ];
     });
   }
 
+  public function redeemToken($token, User $user)
+  {
+    $storyToken = StoryToken::where('token', $token)->first();
+    if (!$storyToken) {
+      return response()->json(['message' => 'Token not found'], 404);
+    }
+    if ($storyToken->expires_at < now()) {
+      return response()->json(['message' => 'Token expired'], 400);
+    }
+    if ($storyToken->story) {
+      return response()->json(['message' => 'Token already redeemed'], 400);
+    }
+    $instagramId = $storyToken->partner->instagram_id;
+    $story = new CustomerStory([
+      'instagram_id' => $instagramId,
+    ]);
+    $story->token()->associate($storyToken);
+    $story->customer()->associate($user);
+    $story->save();
+    return $storyToken->load('partner', 'story');
+  }
 
   private function payStory($balance, $points, $paymentAmount)
   {
