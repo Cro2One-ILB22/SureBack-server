@@ -81,8 +81,8 @@ class User extends Authenticatable
         return $this->hasMany(CustomerStory::class, 'customer_id');
     }
 
-    public function partner()
+    public function partnerDetail()
     {
-        return $this->hasOne(Partner::class);
+        return $this->hasOne(PartnerDetail::class);
     }
 }

@@ -141,13 +141,18 @@ class InstagramService
       }
     }
 
-    $oldestCursor = $inbox['oldest_cursor'];
     if (!$otp) {
-      if ($oldestCursor) {
-        return $this->getOTPFrom($instagramId, $oldestCursor, $pending);
+      if (array_key_exists('oldest_cursor', $inbox)) {
+        $cursor = $inbox['oldest_cursor'];
+      } else {
+        $cursor = null;
+      }
+
+      if ($cursor) {
+        return $this->getOTPFrom($instagramId, $cursor, $pending);
       } else {
         if ($pending) {
-          return $this->getOTPFrom($instagramId, $oldestCursor, false);
+          return $this->getOTPFrom($instagramId, $cursor, false);
         } else {
           return null;
         }

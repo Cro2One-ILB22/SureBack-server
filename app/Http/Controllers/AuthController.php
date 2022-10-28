@@ -103,7 +103,7 @@ class AuthController extends Controller
 
         if ($user) {
             if (request()->role === 'partner') {
-                $user->partner()->create();
+                $user->partnerDetail()->create();
             }
             return $this->respondWithToken($user);
         } else {

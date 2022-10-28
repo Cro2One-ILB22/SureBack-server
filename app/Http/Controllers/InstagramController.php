@@ -34,7 +34,7 @@ class InstagramController extends Controller
     public function generateToken()
     {
         $paymentAmount = request()->payment_amount;
-        $cashbackAmount = (auth()->user()->partner->cashback_percent ?? 0) * $paymentAmount;
+        $cashbackAmount = (auth()->user()->partnerDetail->cashback_percent ?? 0) * $paymentAmount;
         return DB::transaction(function () use ($cashbackAmount) {
             $token = $this->storyService->generateToken(auth()->user(), $cashbackAmount);
 
