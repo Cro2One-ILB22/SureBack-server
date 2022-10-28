@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('image_uri')->nullable();
             $table->string('video_uri')->nullable();
             $table->enum('status', config('enums.story_status'))->nullable();
+            $table->timestamp('submitted_at')->nullable();
             $table->string('note')->nullable();
             $table->timestamps();
         });

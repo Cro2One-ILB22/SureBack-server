@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CustomerStory;
 use App\Models\User;
 use App\Services\InstagramService;
 use App\Services\StoryService;
@@ -57,5 +58,23 @@ class InstagramController extends Controller
     {
         $token = request()->token;
         return $this->storyService->redeemToken($token, auth()->user());
+    }
+
+    public function story()
+    {
+        $storyId = request()->validate([
+            'story_id' => 'required',
+        ])['story_id'];
+        $story = CustomerStory::find($storyId);
+        if (!$story) {
+            return response()->json(['message' => 'Story not found'], 404);
+        }
+
+        $user = auth()->user();
+        if ($user->id != $story->customer_id) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        return response()->json($this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id), 200);
     }
 }

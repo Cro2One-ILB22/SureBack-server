@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('story_tokens', function (Blueprint $table) {
             $table->id();
             $table->string('token');
+            $table->unsignedBigInteger('instagram_id');
             $table->foreignId('partner_id');
             $table->timestamp('expires_at');
             $table->timestamps();

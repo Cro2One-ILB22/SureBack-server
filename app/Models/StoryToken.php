@@ -12,6 +12,7 @@ class StoryToken extends Model
 
     protected $fillable = [
         'token',
+        'instagram_id',
         'expires_at',
     ];
 
