@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\InstagramService;
@@ -20,14 +21,11 @@ class AuthController extends Controller
         $this->middleware('auth:sanctum', ['except' => ['login', 'register', 'getInstagramOTP', 'verifyInstagramOTP']]);
     }
 
-    public function getInstagramOTP()
+    public function getInstagramOTP(StoreUserRequest $request)
     {
-        if ($this->getRegisterValidator()->fails()) {
-            return response()->json($this->getRegisterValidator()->errors(), 400);
-        }
-
+        $validated = $request->safe();
         $instagramService = new InstagramService();
-        $instagramProfile = $instagramService->getProfileInfo(request()->username);
+        $instagramProfile = $instagramService->getProfileInfo($validated->username);
 
         if (!$instagramProfile) {
             return $this->getInstagramProfileError('Failed to get instagram profile');
@@ -39,7 +37,7 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            return response()->json($validator, 400);
         }
 
         $otpService = new OTPService();
@@ -48,14 +46,11 @@ class AuthController extends Controller
         return response()->json($otpService->generateInstagramOTP($reqData));
     }
 
-    public function verifyInstagramOTP()
+    public function verifyInstagramOTP(StoreUserRequest $request)
     {
-        if ($this->getRegisterValidator()->fails()) {
-            return response()->json($this->getRegisterValidator()->errors(), 400);
-        }
-
+        $validated = $request->validated();
         $instagramService = new InstagramService();
-        $instagramProfile = $instagramService->getProfileInfo(request()->all()['username']);
+        $instagramProfile = $instagramService->getProfileInfo($validated['username']);
 
         if (!$instagramProfile) {
             return $this->getInstagramProfileError('Failed to get instagram profile');
@@ -67,7 +62,7 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            return response()->json($validator, 400);
         }
 
         $otp = $instagramService->getOTPFrom($instagramId);
@@ -87,22 +82,25 @@ class AuthController extends Controller
         if (!$otpService->verifyInstagramOTP($reqData)) {
             return response()->json(['message' => 'Invalid OTP'], 401);
         }
-        return $this->register($instagramId);
+        return $this->register($request, $instagramId);
     }
 
-    private function register($instagramId)
+    private function register(StoreUserRequest $request, $instagramId)
     {
+        $validated = $request->safe()
+            ->merge(['instagram_id' => $instagramId])
+            ->except(['username', 'password']);
+        $role = $validated['role'];
         $user = User::create(array_merge(
-            request()->only(['name', 'email']),
-            ['instagram_id' => $instagramId],
-            ['password' => bcrypt(request()->password)],
+            $validated,
+            ['password' => bcrypt($request->password)]
         ));
 
         $user->roles()->attach(Role::where('slug', 'user')->first());
-        $user->roles()->attach(Role::where('slug', request()->role)->first());
+        $user->roles()->attach(Role::where('slug', $role)->first());
 
         if ($user) {
-            if (request()->role === 'partner') {
+            if ($role === 'partner') {
                 $user->partnerDetail()->create();
             }
             return $this->respondWithToken($user);
@@ -179,17 +177,6 @@ class AuthController extends Controller
             'access_token' => $token->plainTextToken,
             'token_type' => 'bearer',
             'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
-        ]);
-    }
-
-    private function getRegisterValidator()
-    {
-        return Validator::make(request()->all(), [
-            'name' => 'required|string|between:2,100',
-            'email' => 'required|string|email|max:100|unique:users',
-            'password' => 'required|string|min:6',
-            'username' => 'required|string',
-            'role' => 'required|string|in:' . implode(',', config('enums.registerable_role')),
         ]);
     }
 
