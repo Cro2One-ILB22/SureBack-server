@@ -34,4 +34,5 @@ Route::group([
     Route::post('token/generate', [InstagramController::class, 'generateToken'])->middleware('abilities:partner');
     Route::post('token/redeem', [InstagramController::class, 'redeemToken']);
     Route::get('story', [InstagramController::class, 'story']);
+    Route::put('story', [InstagramController::class, 'updateStory']);
 });

@@ -19,8 +19,8 @@ return new class extends Migration
             $table->foreignId('story_token_id');
             $table->string('instagram_story_id')->nullable();
             $table->string('instagram_id');
-            $table->string('image_uri')->nullable();
-            $table->string('video_uri')->nullable();
+            $table->text('image_uri')->nullable();
+            $table->text('video_uri')->nullable();
             $table->enum('status', config('enums.story_status'))->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->string('note')->nullable();

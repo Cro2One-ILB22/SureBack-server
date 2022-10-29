@@ -155,8 +155,8 @@ class StoryService
       $mentionedStories = array_filter($story[$stickerContainerKey], function ($sticker) use ($stickerKey) {
         return $sticker[$stickerKey]['app_id'] === 'com.bloks.www.sticker.ig.mention.screen';
       });
-      return array_filter($mentionedStories, function ($sticker) use ($mentioned) {
-        return $sticker['bloks_sticker']['sticker_data']['ig_mention']['account_id'] == $mentioned;
+      return array_filter($mentionedStories, function ($sticker) use ($mentioned, $stickerKey) {
+        return $sticker[$stickerKey]['sticker_data']['ig_mention']['account_id'] == $mentioned;
       });
     });
 

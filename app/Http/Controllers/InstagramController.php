@@ -77,4 +77,28 @@ class InstagramController extends Controller
 
         return response()->json($this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id), 200);
     }
+
+    public function updateStory()
+    {
+        $request = request()->validate([
+            'story_id' => 'required',
+            'instagram_story_id' => 'required',
+        ]);
+        $storyId = $request['story_id'];
+        $story = CustomerStory::find($storyId);
+        if (!$story) {
+            return response()->json(['message' => 'Story not found'], 404);
+        }
+
+        $user = auth()->user();
+        if ($user->id != $story->customer_id) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if (!$this->storyService->submitStory($story, $request['instagram_story_id'])) {
+            return response()->json(['message' => 'Failed to submit story'], 400);
+        }
+
+        return response()->json(['message' => 'Success']);
+    }
 }
