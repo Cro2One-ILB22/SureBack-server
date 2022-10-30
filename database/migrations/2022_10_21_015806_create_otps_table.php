@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable();
             $table->foreignId('factor_id');
             $table->string('owner');
-            $table->unsignedInteger('code');
+            $table->string('code')->unique();
             $table->timestamp('expires_at');
             $table->timestamps();
         });

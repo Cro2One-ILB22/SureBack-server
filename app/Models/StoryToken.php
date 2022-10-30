@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CryptoService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,14 @@ class StoryToken extends Model
     protected $hidden = [
         'partner_id'
     ];
+
+    protected function token(): Attribute
+    {
+        return new Attribute(
+            fn ($value) => CryptoService::decrypt($value),
+            fn ($value) => CryptoService::encrypt($value)
+        );
+    }
 
     public function partner()
     {

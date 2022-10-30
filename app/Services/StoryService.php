@@ -85,7 +85,7 @@ class StoryService
       $corporateTransaction->save();
 
       $instagramId = $user->instagram_id;
-      $token = hash("crc32", $instagramId . time());
+      $token = $this->generateUniqueToken($instagramId);
       $storyToken = new StoryToken([
         'token' => $token,
         'instagram_id' => $instagramId,
@@ -103,7 +103,8 @@ class StoryService
 
   public function redeemToken($token, User $customer)
   {
-    $storyToken = StoryToken::where('token', $token)->first();
+    $encryptedToken = CryptoService::encrypt($token);
+    $storyToken = StoryToken::where('token', $encryptedToken)->first();
     if (!$storyToken) {
       return response()->json(['message' => 'Token not found'], 404);
     }
@@ -268,5 +269,14 @@ class StoryService
     }
 
     return array_shift($mentionedStories);
+  }
+
+  private function generateUniqueToken($instagramId)
+  {
+    $token = hash("crc32", $instagramId . time());
+    if (StoryToken::where('token', CryptoService::encrypt($token))->first()) {
+      return $this->generateUniqueToken($instagramId);
+    }
+    return $token;
   }
 }

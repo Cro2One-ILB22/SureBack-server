@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\CryptoService;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +16,14 @@ class Otp extends Model
         'owner',
         'expires_at',
     ];
+
+    protected function code(): Attribute
+    {
+        return new Attribute(
+            fn ($value) => CryptoService::decrypt($value),
+            fn ($value) => CryptoService::encrypt($value)
+        );
+    }
 
     public function user()
     {

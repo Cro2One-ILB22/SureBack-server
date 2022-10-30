@@ -22,7 +22,8 @@ class OTPService
   public function generateOTP($reqData)
   {
     $code = random_int(100000, 999999);
-    $otp = Otp::where('code', $code)->first();
+    $encryptedCode = CryptoService::encrypt(strval($code));
+    $otp = Otp::where('code', $encryptedCode)->first();
     if ($otp) {
       return $this->generateOTP($reqData);
     }
@@ -57,10 +58,11 @@ class OTPService
     $factor = $reqData['factor'];
     $code = $reqData['otp'];
     $otpFactor = OtpFactor::where('slug', $factor)->first();
+    $encryptedCode = CryptoService::encrypt(strval($code));
 
     $otp = Otp::whereBelongsTo($otpFactor, 'factor')
       ->whereOwner($owner)
-      ->where('code', $code)
+      ->where('code', $encryptedCode)
       ->where('expires_at', '>', now())
       ->first();
 
