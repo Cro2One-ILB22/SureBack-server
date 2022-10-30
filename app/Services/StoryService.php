@@ -31,14 +31,27 @@ class StoryService
 
   public function generateToken(User $user, int $purchaseAmount)
   {
+    $todaysTokenCount = StoryToken::where('partner_id', $user->id)
+      ->where('created_at', '>=', now('Asia/Jakarta')->startOfDay())
+      ->count();
+    $dailyTokenLimit = $user->partnerDetail->daily_token_limit;
+
+    if ($dailyTokenLimit && $todaysTokenCount >= $dailyTokenLimit) {
+      throw new \Exception('Daily token limit reached');
+    }
+
     return DB::transaction(function () use ($user, $purchaseAmount) {
       $cashbackAmount = ($user->partnerDetail->cashback_percent ?? 0) * $purchaseAmount;
+      $cashbackLimit = $user->partnerDetail->cashback_limit;
+      if ($cashbackLimit) {
+        $cashbackAmount = min($cashbackAmount, $cashbackLimit);
+      }
       $balance_before = $user->balance;
       $points_before = $user->points;
       $userPayingPower = $this->payStory($user->balance, $user->points, $cashbackAmount);
 
       if (!$userPayingPower) {
-        return null;
+        throw new \Exception('Insufficient balance');
       }
 
       $balance_after = $userPayingPower['balance'];
@@ -108,13 +121,13 @@ class StoryService
     $encryptedToken = CryptoService::encrypt($token);
     $storyToken = StoryToken::where('token', $encryptedToken)->first();
     if (!$storyToken) {
-      return response()->json(['message' => 'Token not found'], 404);
+      throw new \Exception('Invalid token');
     }
     if ($storyToken->expires_at < now()) {
-      return response()->json(['message' => 'Token expired'], 400);
+      throw new \Exception('Token expired');
     }
     if ($storyToken->story) {
-      return response()->json(['message' => 'Token already redeemed'], 400);
+      throw new \Exception('Token already redeemed');
     }
     $story = new CustomerStory([
       'instagram_id' => $customer->instagram_id,

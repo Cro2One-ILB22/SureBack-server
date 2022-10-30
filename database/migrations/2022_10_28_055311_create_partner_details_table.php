@@ -17,6 +17,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->float('cashback_percent')->nullable();
+            $table->unsignedBigInteger('cashback_limit')->nullable();
+            $table->unsignedInteger('daily_token_limit')->nullable();
             $table->timestamps();
         });
     }

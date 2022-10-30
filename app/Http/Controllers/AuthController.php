@@ -134,7 +134,11 @@ class AuthController extends Controller
      */
     public function me()
     {
-        return response()->json(auth()->user());
+        $user = auth()->user();
+        if ($user->roles->contains('slug', 'partner')) {
+            $user->partnerDetail->makeHidden(['user', 'user_id', 'created_at', 'updated_at']);
+        }
+        return response()->json($user);
     }
 
     /**

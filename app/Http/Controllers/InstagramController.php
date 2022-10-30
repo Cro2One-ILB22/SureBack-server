@@ -6,6 +6,7 @@ use App\Models\CustomerStory;
 use App\Models\User;
 use App\Services\InstagramService;
 use App\Services\StoryService;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 class InstagramController extends Controller
@@ -35,28 +36,32 @@ class InstagramController extends Controller
     {
         $purchaseAmount = request()->purchase_amount;
         return DB::transaction(function () use ($purchaseAmount) {
-            $token = $this->storyService->generateToken(auth()->user(), $purchaseAmount);
+            try {
+                $token = $this->storyService->generateToken(auth()->user(), $purchaseAmount);
 
-            if (!$token) {
-                return response()->json(['message' => 'Insufficient balance'], 400);
-            }
-
-            $customer_id = request()->customer_id;
-            if ($customer_id) {
-                $customer = User::find($customer_id);
-                if ($customer) {
-                    return $this->storyService->redeemToken($token['token'], $customer);
+                $customer_id = request()->customer_id;
+                if ($customer_id) {
+                    $customer = User::find($customer_id);
+                    if ($customer) {
+                        return $this->storyService->redeemToken($token['token'], $customer);
+                    }
                 }
-            }
 
-            return response()->json($token);
+                return response()->json($token);
+            } catch (Exception $e) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
         });
     }
 
     public function redeemToken()
     {
         $token = request()->token;
-        return $this->storyService->redeemToken($token, auth()->user());
+        try {
+            return $this->storyService->redeemToken($token, auth()->user());
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 
     public function story()
