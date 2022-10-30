@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('token')->unique();
             $table->unsignedBigInteger('instagram_id');
+            $table->bigInteger('purchase_amount');
             $table->foreignId('partner_id');
             $table->timestamp('expires_at');
             $table->timestamps();

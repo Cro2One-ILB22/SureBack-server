@@ -29,9 +29,10 @@ class StoryService
   }
 
 
-  public function generateToken(User $user, $cashbackAmount)
+  public function generateToken(User $user, int $purchaseAmount)
   {
-    return DB::transaction(function () use ($user, $cashbackAmount) {
+    return DB::transaction(function () use ($user, $purchaseAmount) {
+      $cashbackAmount = ($user->partnerDetail->cashback_percent ?? 0) * $purchaseAmount;
       $balance_before = $user->balance;
       $points_before = $user->points;
       $userPayingPower = $this->payStory($user->balance, $user->points, $cashbackAmount);
@@ -88,6 +89,7 @@ class StoryService
       $token = $this->generateUniqueToken($instagramId);
       $storyToken = new StoryToken([
         'token' => $token,
+        'purchase_amount' => $purchaseAmount,
         'instagram_id' => $instagramId,
         'expires_at' => now()->addHours(18),
       ]);

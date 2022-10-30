@@ -33,10 +33,9 @@ class InstagramController extends Controller
 
     public function generateToken()
     {
-        $paymentAmount = request()->payment_amount;
-        $cashbackAmount = (auth()->user()->partnerDetail->cashback_percent ?? 0) * $paymentAmount;
-        return DB::transaction(function () use ($cashbackAmount) {
-            $token = $this->storyService->generateToken(auth()->user(), $cashbackAmount);
+        $purchaseAmount = request()->purchase_amount;
+        return DB::transaction(function () use ($purchaseAmount) {
+            $token = $this->storyService->generateToken(auth()->user(), $purchaseAmount);
 
             if (!$token) {
                 return response()->json(['message' => 'Insufficient balance'], 400);
