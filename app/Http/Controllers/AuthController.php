@@ -89,12 +89,9 @@ class AuthController extends Controller
     {
         $validated = $request->safe()
             ->merge(['instagram_id' => $instagramId])
-            ->except(['username', 'password']);
+            ->except('username');
         $role = $validated['role'];
-        $user = User::create(array_merge(
-            $validated,
-            ['password' => bcrypt($request->password)]
-        ));
+        $user = User::create($validated);
 
         $user->roles()->attach(Role::where('slug', 'user')->first());
         $user->roles()->attach(Role::where('slug', $role)->first());
