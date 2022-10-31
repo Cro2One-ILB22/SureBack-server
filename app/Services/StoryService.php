@@ -19,6 +19,9 @@ class StoryService
   private $keyHost = 'Host';
   private $keyXAppId = 'X-IG-App-ID';
   private $keySessionId = 'sessionid';
+  private $keyUserAgent = 'User-Agent';
+  private $keyReferer = 'Referer';
+  private $keyOrigin = 'Origin';
 
   public function __construct()
   {
@@ -26,6 +29,9 @@ class StoryService
     $this->host = config('instagram.host');
     $this->xAppId = config('instagram.x_app_id');
     $this->sessionId = config('instagram.session_id');
+    $this->userAgent = config('instagram.user_agent');
+    $this->referer = config('instagram.referer');
+    $this->origin = config('instagram.origin');
   }
 
 
@@ -207,6 +213,9 @@ class StoryService
     $headers = [
       $this->keyHost => $this->host,
       $this->keyXAppId => $this->xAppId,
+      $this->keyUserAgent => $this->userAgent,
+      $this->keyReferer => $this->referer,
+      $this->keyOrigin => $this->origin,
     ];
 
     $cookieJar = CookieJar::fromArray([

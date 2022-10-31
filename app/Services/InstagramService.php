@@ -10,6 +10,9 @@ class InstagramService
   private $keyHost = 'Host';
   private $keyXAppId = 'X-IG-App-ID';
   private $keySessionId = 'sessionid';
+  private $keyUserAgent = 'User-Agent';
+  private $keyReferer = 'Referer';
+  private $keyOrigin = 'Origin';
 
   public function __construct()
   {
@@ -17,6 +20,9 @@ class InstagramService
     $this->host = config('instagram.host');
     $this->xAppId = config('instagram.x_app_id');
     $this->sessionId = config('instagram.session_id');
+    $this->userAgent = config('instagram.user_agent');
+    $this->referrer = config('instagram.referrer');
+    $this->origin = config('instagram.origin');
   }
 
   function getProfile($username)
@@ -47,6 +53,9 @@ class InstagramService
     $headers = [
       $this->keyHost => $this->host,
       $this->keyXAppId => $this->xAppId,
+      $this->keyUserAgent => $this->userAgent,
+      $this->keyReferer => $this->referrer,
+      $this->keyOrigin => $this->origin,
     ];
 
     $url = $this->baseUrl . $path;
@@ -81,6 +90,9 @@ class InstagramService
     $headers = [
       $this->keyHost => $this->host,
       $this->keyXAppId => $this->xAppId,
+      $this->keyUserAgent => $this->userAgent,
+      $this->keyReferer => $this->referrer,
+      $this->keyOrigin => $this->origin,
     ];
 
     $cookieJar = CookieJar::fromArray([
