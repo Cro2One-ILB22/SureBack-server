@@ -13,6 +13,7 @@ use App\Models\User;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class StoryService
 {
@@ -46,8 +47,12 @@ class StoryService
       throw new \Exception('Daily token limit reached');
     }
 
+    if (!$user->partnerDetail->is_active_generating_token) {
+      throw new BadRequestException('You don\'t activate token generation');
+    }
+
     return DB::transaction(function () use ($user, $purchaseAmount) {
-      $cashbackAmount = ($user->partnerDetail->cashback_percent ?? 0) * $purchaseAmount;
+      $cashbackAmount = intval((($user->partnerDetail->cashback_percent ?? 0) / 100) * $purchaseAmount);
       $cashbackLimit = $user->partnerDetail->cashback_limit;
       if ($cashbackLimit) {
         $cashbackAmount = min($cashbackAmount, $cashbackLimit);

@@ -10,8 +10,34 @@ class PartnerDetail extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'cashback_percent',
+        'cashback_limit',
+        'daily_token_limit',
+        'is_active_generating_token',
+    ];
+
     protected $appends = [
         'todays_token_count',
+    ];
+
+    protected $hidden = [
+        'id',
+        'user_id',
+        'user',
+        'created_at',
+    ];
+    
+    protected $casts = [
+        'cashback_percent' => 'float',
+        'cashback_limit' => 'integer',
+        'daily_token_limit' => 'integer',
+        'is_active_generating_token' => 'boolean',
     ];
 
     public function todaysTokenCount(): Attribute

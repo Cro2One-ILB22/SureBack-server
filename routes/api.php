@@ -57,3 +57,11 @@ Route::group([
 ], function ($router) {
     Route::get('', [UserController::class, 'customer']);
 });
+
+Route::group([
+    'middleware' => 'auth:sanctum',
+    'prefix' => 'user'
+], function ($router) {
+    Route::put('', [UserController::class, 'update']);
+    Route::put('partner-detail', [UserController::class, 'updatePartnerDetail'])->middleware('abilities:partner');
+});

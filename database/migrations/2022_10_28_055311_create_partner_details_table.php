@@ -19,6 +19,7 @@ return new class extends Migration
             $table->float('cashback_percent')->nullable();
             $table->unsignedBigInteger('cashback_limit')->nullable();
             $table->unsignedInteger('daily_token_limit')->nullable();
+            $table->boolean('is_active_generating_token')->default(true);
             $table->timestamps();
         });
     }
