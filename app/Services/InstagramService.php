@@ -4,6 +4,7 @@ namespace App\Services;
 
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class InstagramService
 {
@@ -109,11 +110,7 @@ class InstagramService
       ->get($url, $queries);
 
     if (!$response->successful()) {
-      return [
-        'success' => false,
-        'message' => 'Failed to get inbox',
-        'status' => $response->status(),
-      ];
+      throw new \Exception('Failed to get inbox');
     }
     return $response->json()['inbox'];
   }
@@ -172,5 +169,43 @@ class InstagramService
     }
 
     return $otp;
+  }
+
+  public function getUniqueInstagramId($username)
+  {
+    $instagramProfile = $this->getProfileInfo($username);
+
+    if (!$instagramProfile) {
+      throw new \Exception('Failed to get instagram profile');
+    }
+
+    $instagramId = $instagramProfile['id'];
+    $validator = Validator::make(['instagram_id' => $instagramId], [
+      'instagram_id' => 'unique:users',
+    ]);
+
+    if ($validator->fails()) {
+      throw new \Exception('Instagram ID already exists');
+    }
+    return $instagramId;
+  }
+
+  public function verifyOTP($username)
+  {
+    $instagramId = $this->getUniqueInstagramId($username);
+    $otp = $this->getOTPFrom($instagramId);
+    if (!$otp || !is_numeric($otp)) {
+      throw new \Exception('Failed to get OTP');
+    }
+
+    $otpService = new OTPService();
+    $reqData = [
+      'otp' => $otp,
+      'instagram_id' => $instagramId,
+    ];
+
+    if (!$otpService->verifyInstagramOTP($reqData)) {
+      throw new \Exception('Invalid OTP');
+    }
   }
 }

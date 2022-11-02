@@ -7,7 +7,6 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\InstagramService;
 use App\Services\OTPService;
-use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -18,74 +17,40 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:sanctum', ['except' => ['login', 'register', 'getInstagramOTP', 'verifyInstagramOTP']]);
+        $this->middleware('auth:sanctum', ['except' => ['login', 'register', 'instagramOTPRegister', 'register']]);
     }
 
-    public function getInstagramOTP(StoreUserRequest $request)
+    public function instagramOTPRegister(StoreUserRequest $request)
     {
         $validated = $request->safe();
         $instagramService = new InstagramService();
-        $instagramProfile = $instagramService->getProfileInfo($validated->username);
+        try {
+            $instagramId = $instagramService->getUniqueInstagramId($validated->username);
+            $reqData = ['instagram_id' => $instagramId];
 
-        if (!$instagramProfile) {
-            return $this->getInstagramProfileError('Failed to get instagram profile');
+            $otpService = new OTPService();
+
+            return response()->json($otpService->generateInstagramOTP($reqData));
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
         }
-
-        $instagramId = $instagramProfile['id'];
-        $validator = Validator::make(['instagram_id' => $instagramId], [
-            'instagram_id' => 'unique:users',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator, 400);
-        }
-
-        $otpService = new OTPService();
-        $reqData = ['instagram_id' => $instagramId];
-
-        return response()->json($otpService->generateInstagramOTP($reqData));
     }
 
-    public function verifyInstagramOTP(StoreUserRequest $request)
+    public function register(StoreUserRequest $request)
     {
         $validated = $request->validated();
-        $instagramService = new InstagramService();
-        $instagramProfile = $instagramService->getProfileInfo($validated['username']);
-
-        if (!$instagramProfile) {
-            return $this->getInstagramProfileError('Failed to get instagram profile');
+        try {
+            $username = $validated['username'];
+            $instagramService = new InstagramService();
+            $instagramId = $instagramService->getUniqueInstagramId($username);
+            $instagramService->verifyOTP($username);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
         }
-
-        $instagramId = $instagramProfile['id'];
-        $validator = Validator::make(['instagram_id' => $instagramId], [
-            'instagram_id' => 'unique:users',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator, 400);
-        }
-
-        $otp = $instagramService->getOTPFrom($instagramId);
-        if (!$otp || !is_numeric($otp)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get OTP',
-            ], 400);
-        }
-
-        $otpService = new OTPService();
-        $reqData = [
-            'otp' => $otp,
-            'instagram_id' => $instagramId,
-        ];
-
-        if (!$otpService->verifyInstagramOTP($reqData)) {
-            return response()->json(['message' => 'Invalid OTP'], 401);
-        }
-        return $this->register($request, $instagramId);
+        return $this->registerUser($request, $instagramId);
     }
 
-    private function register(StoreUserRequest $request, $instagramId)
+    private function registerUser(StoreUserRequest $request, $instagramId)
     {
         $validated = $request->safe()
             ->merge(['instagram_id' => $instagramId])
@@ -182,13 +147,5 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
         ]);
-    }
-
-    private function getInstagramProfileError($message)
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-        ], 400);
     }
 }
