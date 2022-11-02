@@ -43,3 +43,17 @@ Route::group([
 ], function ($router) {
     Route::get('', [TransactionController::class, 'index']);
 });
+
+Route::group([
+    'middleware' => 'auth:sanctum',
+    'prefix' => 'partner'
+], function ($router) {
+    Route::get('', [UserController::class, 'partner']);
+});
+
+Route::group([
+    'middleware' => 'auth:sanctum',
+    'prefix' => 'customer'
+], function ($router) {
+    Route::get('', [UserController::class, 'customer']);
+});
