@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\InstagramController;
+namespace App\Http\Controllers;
+
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,4 +35,11 @@ Route::group([
     Route::post('token/redeem', [InstagramController::class, 'redeemToken']);
     Route::get('story', [InstagramController::class, 'story']);
     Route::put('story', [InstagramController::class, 'updateStory']);
+});
+
+Route::group([
+    'middleware' => 'auth:sanctum',
+    'prefix' => 'transaction'
+], function ($router) {
+    Route::get('', [TransactionController::class, 'index']);
 });

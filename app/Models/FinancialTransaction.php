@@ -38,7 +38,7 @@ class FinancialTransaction extends Model
         return $this->hasOne(Withdrawal::class);
     }
 
-    public function successfulTransaction()
+    public function successfulTransactions()
     {
         return $this->hasMany(SuccessfulTransaction::class);
     }

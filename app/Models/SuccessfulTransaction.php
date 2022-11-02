@@ -16,6 +16,21 @@ class SuccessfulTransaction extends Model
         'points_after',
     ];
 
+    protected $appends = [
+        'balance_change',
+        'points_change',
+    ];
+
+    public function getBalanceChangeAttribute(): int
+    {
+        return $this->balance_after - $this->balance_before;
+    }
+
+    public function getPointsChangeAttribute(): int
+    {
+        return $this->points_after - $this->points_before;
+    }
+
     public function transaction()
     {
         return $this->belongsTo(FinancialTransaction::class, 'financial_transaction_id');
