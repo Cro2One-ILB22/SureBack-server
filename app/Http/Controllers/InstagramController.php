@@ -26,9 +26,8 @@ class InstagramController extends Controller
         //
     }
 
-    public function profile()
+    public function profile($username)
     {
-        $username = request()->username;
         return $this->instagramService->getProfile($username);
     }
 
