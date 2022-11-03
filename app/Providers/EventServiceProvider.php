@@ -30,9 +30,9 @@ class EventServiceProvider extends ServiceProvider
     public function boot()
     {
         // create queue
-        Config::dispatch();
+        // Config::dispatch();
 
-        $this->app->bind(Config::class.'@handle', fn($job) => $job->handle());
+        // $this->app->bind(Config::class.'@handle', fn($job) => $job->handle());
         $this->app->bind(TestJob::class.'@handle', fn($job) => $job->handle());
     }
 
