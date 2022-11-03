@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,6 +18,19 @@ class CustomerStory extends Model
         'story_token_id',
         'customer_id',
     ];
+
+    protected $appends = [
+        'story_url',
+    ];
+
+    public function storyUrl(): Attribute
+    {
+        return new Attribute(
+            fn () => $this->instagram_story_id ?
+                "https://www.instagram.com/stories/{$this->customer->instagram_username}/{$this->instagram_story_id}/" :
+                null
+        );
+    }
 
     public function token()
     {

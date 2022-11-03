@@ -32,6 +32,16 @@ class InstagramController extends Controller
         return $this->instagramService->getProfile($username);
     }
 
+    public function user($id)
+    {
+        try {
+            $user = $this->instagramService->getUserInfo($id);
+            return response()->json($user);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
     public function generateToken()
     {
         $purchaseAmount = request()->purchase_amount;

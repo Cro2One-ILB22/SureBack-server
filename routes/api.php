@@ -31,6 +31,7 @@ Route::group([
     'prefix' => 'ig'
 ], function ($router) {
     Route::get('profile', [InstagramController::class, 'profile']);
+    Route::get('user/{id}', [InstagramController::class, 'user']);
     Route::post('token/generate', [InstagramController::class, 'generateToken'])->middleware('abilities:partner');
     Route::post('token/redeem', [InstagramController::class, 'redeemToken']);
     Route::get('story', [InstagramController::class, 'story']);

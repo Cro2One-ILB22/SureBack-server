@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -73,6 +74,58 @@ class InstagramService
       ];
     }
     return $response->json()['data']['user'];
+  }
+
+  function getUserInfo($id)
+  {
+    $path = 'users/' . $id . '/info/';
+    $headers = [
+      $this->keyHost => $this->host,
+      $this->keyXAppId => $this->xAppId,
+      $this->keyUserAgent => $this->userAgent,
+      $this->keyReferer => $this->referrer,
+      $this->keyOrigin => $this->origin,
+    ];
+
+    $cookies = [
+      [
+        $this->keySessionId => $this->sessionId,
+      ],
+      $this->host
+    ];
+
+    $url = $this->baseUrl . $path;
+
+    $response = Http::acceptJson()
+      ->withHeaders($headers)
+      ->withCookies(...$cookies)
+      ->get($url);
+
+    if (!$response->successful()) {
+      throw new \Exception('Failed to get user info');
+    }
+    $userInfo = $response->json()['user'];
+    $id = $userInfo['pk'];
+    $username = $userInfo['username'];
+
+    User::where('instagram_id', $id)->update([
+      'instagram_username' => $username,
+    ]);
+
+    return [
+      'id' => $id,
+      'username' => $username,
+      'full_name' => $userInfo['full_name'] ?? null,
+      'profile_pic_url' => $userInfo['profile_pic_url'] ?? null,
+      'profile_pic_url_hd' => $userInfo['hd_profile_pic_url_info']['url'] ?? null,
+      'biography' => $userInfo['biography'] ?? null,
+      'external_url' => $userInfo['external_url'] ?? null,
+      'is_private' => $userInfo['is_private'] ?? null,
+      'is_verified' => $userInfo['is_verified'] ?? null,
+      'media_count' => $userInfo['media_count'] ?? null,
+      'follower_count' => $userInfo['follower_count'] ?? null,
+      'following_count' => $userInfo['following_count'] ?? null,
+    ];
   }
 
   function getInbox($cursor, $pending = false)

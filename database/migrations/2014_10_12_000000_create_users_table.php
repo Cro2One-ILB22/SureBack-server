@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->unsignedBigInteger('instagram_id')->unique();
+            $table->string('instagram_username')->unique();
             $table->integer('balance')->default(0);
             $table->integer('points')->default(0);
             $table->string('email')->unique();

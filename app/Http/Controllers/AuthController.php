@@ -53,7 +53,10 @@ class AuthController extends Controller
     private function registerUser(StoreUserRequest $request, $instagramId)
     {
         $validated = $request->safe()
-            ->merge(['instagram_id' => $instagramId])
+            ->merge([
+                'instagram_id' => $instagramId,
+                'instagram_username' => $request->safe()->username,
+            ])
             ->except('username');
         $role = $validated['role'];
         $user = User::create($validated);
