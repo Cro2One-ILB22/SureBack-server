@@ -115,4 +115,20 @@ class InstagramController extends Controller
 
         return response()->json(['message' => 'Success']);
     }
+
+    public function approveStory()
+    {
+        try {
+            $request = request()->validate([
+                'id' => 'required',
+                'approved' => 'required|boolean',
+            ]);
+            $storyId = $request['id'];
+            $approved = $request['approved'];
+
+            return $this->instagramService->approveStory(auth()->user()->id, $storyId, $approved);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
 }

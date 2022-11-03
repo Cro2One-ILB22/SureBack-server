@@ -22,8 +22,8 @@ return [
     'credit' => 'C',
   ],
   'story_status' => [
-    'review' => 0,
+    'rejected' => 0,
     'approved' => 1,
-    'rejected' => 2,
+    'review' => 2,
   ],
 ];

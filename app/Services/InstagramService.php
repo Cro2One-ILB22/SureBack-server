@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CustomerStory;
 use App\Models\User;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
@@ -260,5 +261,20 @@ class InstagramService
     if (!$otpService->verifyInstagramOTP($reqData)) {
       throw new \Exception('Invalid OTP');
     }
+  }
+
+  public function approveStory($userId, $customerStoryId, $approved)
+  {
+    $story = CustomerStory::where('id', $customerStoryId)->whereHas('token', function ($query) use ($userId) {
+      $query->where('merchant_id', $userId);
+    })->first();
+    if (!$story) {
+      throw new \Exception('Story not found');
+    }
+
+    $story->status = strval(config('enums.story_status')[array_search($approved, config('enums.story_status'))]);
+    $story->save();
+
+    return $story;
   }
 }

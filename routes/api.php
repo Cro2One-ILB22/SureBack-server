@@ -36,6 +36,7 @@ Route::group([
     Route::post('token/redeem', [InstagramController::class, 'redeemToken']);
     Route::get('story', [InstagramController::class, 'story']);
     Route::put('story', [InstagramController::class, 'updateStory']);
+    Route::put('story/approval', [InstagramController::class, 'approveStory']);
 });
 
 Route::group([
