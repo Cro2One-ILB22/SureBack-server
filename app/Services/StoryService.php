@@ -10,32 +10,11 @@ use App\Models\SuccessfulTransaction;
 use App\Models\TransactionCategory;
 use App\Models\TransactionStatus;
 use App\Models\User;
-use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class StoryService
 {
-  private $keyHost = 'Host';
-  private $keyXAppId = 'X-IG-App-ID';
-  private $keySessionId = 'sessionid';
-  private $keyUserAgent = 'User-Agent';
-  private $keyReferer = 'Referer';
-  private $keyOrigin = 'Origin';
-
-  public function __construct()
-  {
-    $this->baseUrl = config('instagram.base_url');
-    $this->host = config('instagram.host');
-    $this->xAppId = config('instagram.x_app_id');
-    $this->sessionId = config('instagram.session_id');
-    $this->userAgent = config('instagram.user_agent');
-    $this->referer = config('instagram.referer');
-    $this->origin = config('instagram.origin');
-  }
-
-
   public function generateToken(User $user, int $purchaseAmount)
   {
     $todaysTokenCount = StoryToken::where('partner_id', $user->id)
@@ -215,31 +194,11 @@ class StoryService
     $queries = [
       'reel_ids' => $instagramId,
     ];
-    $headers = [
-      $this->keyHost => $this->host,
-      $this->keyXAppId => $this->xAppId,
-      $this->keyUserAgent => $this->userAgent,
-      $this->keyReferer => $this->referer,
-      $this->keyOrigin => $this->origin,
-    ];
-
-    $cookieJar = CookieJar::fromArray([
-      $this->keySessionId => $this->sessionId,
-    ], $this->host);
-
     $url = $this->baseUrl . $path;
 
-    $response = Http::acceptJson()
-      ->withHeaders($headers)
-      ->withOptions([
-        'cookies' => $cookieJar,
-      ])
-      ->get($url, $queries);
+    $responseJson = InstagramService::callAPI('GET', $url, $queries);
 
-    if (!$response->successful()) {
-      return [];
-    }
-    $reels = $response->json()['reels_media'];
+    $reels = $responseJson['reels_media'];
     if (count($reels) > 0) {
       if ($withUserInfo) {
         return $reels[0];

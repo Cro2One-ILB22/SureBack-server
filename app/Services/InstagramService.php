@@ -10,22 +10,51 @@ use Illuminate\Support\Facades\Validator;
 
 class InstagramService
 {
-  private $keyHost = 'Host';
-  private $keyXAppId = 'X-IG-App-ID';
-  private $keySessionId = 'sessionid';
-  private $keyUserAgent = 'User-Agent';
-  private $keyReferer = 'Referer';
-  private $keyOrigin = 'Origin';
-
-  public function __construct()
+  static function callAPI($method, $path, $queries = [], $headers = [], $body = null, $auth = true)
   {
-    $this->baseUrl = config('instagram.base_url');
-    $this->host = config('instagram.host');
-    $this->xAppId = config('instagram.x_app_id');
-    $this->sessionId = config('instagram.session_id');
-    $this->userAgent = config('instagram.user_agent');
-    $this->referrer = config('instagram.referrer');
-    $this->origin = config('instagram.origin');
+    $keyHost = 'Host';
+    $keyXAppId = 'X-IG-App-ID';
+    $keySessionId = 'sessionid';
+    $keyUserAgent = 'User-Agent';
+    $keyReferer = 'Referer';
+    $keyOrigin = 'Origin';
+
+    $baseUrl = config('instagram.base_url');
+    $host = config('instagram.host');
+    $xAppId = config('instagram.x_app_id');
+    $sessionId = config('instagram.session_id');
+    $userAgent = config('instagram.user_agent');
+    $referrer = config('instagram.referrer');
+    $origin = config('instagram.origin');
+    $url = $baseUrl . $path;
+
+    $headers = array_merge($headers, [
+      $keyHost => $host,
+      $keyXAppId => $xAppId,
+      $keyUserAgent => $userAgent,
+      $keyReferer => $referrer,
+      $keyOrigin => $origin,
+    ]);
+
+    $response = Http::acceptJson()
+      ->withHeaders($headers);
+
+    if ($auth) {
+      $cookieJar = CookieJar::fromArray([
+        $keySessionId => $sessionId,
+      ], $host);
+
+      $response = $response->withOptions([
+        'cookies' => $cookieJar,
+      ]);
+    }
+
+    $response = $response->$method($url, $queries, $body);
+
+    if (!$response->successful()) {
+      throw new \Exception('Failed to request API');
+    }
+    return $response->json();
   }
 
   function getProfile($username)
@@ -53,59 +82,16 @@ class InstagramService
     $queries = [
       'username' => $username,
     ];
-    $headers = [
-      $this->keyHost => $this->host,
-      $this->keyXAppId => $this->xAppId,
-      $this->keyUserAgent => $this->userAgent,
-      $this->keyReferer => $this->referrer,
-      $this->keyOrigin => $this->origin,
-    ];
+    $responseJson = $this->callAPI('GET', $path, $queries, auth: false);
 
-    $url = $this->baseUrl . $path;
-
-    $response = Http::acceptJson()
-      ->withHeaders($headers)
-      ->get($url, $queries);
-
-    if (!$response->successful()) {
-      return [
-        'success' => false,
-        'message' => 'Failed to get profile info',
-        'status' => $response->status(),
-      ];
-    }
-    return $response->json()['data']['user'];
+    return $responseJson['data']['user'];
   }
 
   function getUserInfo($id)
   {
     $path = 'users/' . $id . '/info/';
-    $headers = [
-      $this->keyHost => $this->host,
-      $this->keyXAppId => $this->xAppId,
-      $this->keyUserAgent => $this->userAgent,
-      $this->keyReferer => $this->referrer,
-      $this->keyOrigin => $this->origin,
-    ];
-
-    $cookies = [
-      [
-        $this->keySessionId => $this->sessionId,
-      ],
-      $this->host
-    ];
-
-    $url = $this->baseUrl . $path;
-
-    $response = Http::acceptJson()
-      ->withHeaders($headers)
-      ->withCookies(...$cookies)
-      ->get($url);
-
-    if (!$response->successful()) {
-      throw new \Exception('Failed to get user info');
-    }
-    $userInfo = $response->json()['user'];
+    $responseJson = $this->callAPI('GET', $path);
+    $userInfo = $responseJson['user'];
     $id = $userInfo['pk'];
     $username = $userInfo['username'];
 
@@ -142,31 +128,9 @@ class InstagramService
       // 'reason' => 'cold_start_fetch',
       // 'last_activity_at' => time(),
     ];
-    $headers = [
-      $this->keyHost => $this->host,
-      $this->keyXAppId => $this->xAppId,
-      $this->keyUserAgent => $this->userAgent,
-      $this->keyReferer => $this->referrer,
-      $this->keyOrigin => $this->origin,
-    ];
+    $responseJson = $this->callAPI('GET', $path, $queries);
 
-    $cookieJar = CookieJar::fromArray([
-      $this->keySessionId => $this->sessionId,
-    ], $this->host);
-
-    $url = $this->baseUrl . $path;
-
-    $response = Http::acceptJson()
-      ->withHeaders($headers)
-      ->withOptions([
-        'cookies' => $cookieJar,
-      ])
-      ->get($url, $queries);
-
-    if (!$response->successful()) {
-      throw new \Exception('Failed to get inbox');
-    }
-    return $response->json()['inbox'];
+    return $responseJson['inbox'];
   }
 
   function getOTPFrom($instagramId, $cursor = null, $pending = true, $expirationMinutes = 5)
@@ -225,7 +189,7 @@ class InstagramService
     return $otp;
   }
 
-  public function getUniqueInstagramId($username)
+  function getUniqueInstagramId($username)
   {
     $instagramProfile = $this->getProfileInfo($username);
 
@@ -244,7 +208,7 @@ class InstagramService
     return $instagramId;
   }
 
-  public function verifyOTP($username)
+  function verifyOTP($username)
   {
     $instagramId = $this->getUniqueInstagramId($username);
     $otp = $this->getOTPFrom($instagramId);
@@ -263,7 +227,7 @@ class InstagramService
     }
   }
 
-  public function approveStory($userId, $customerStoryId, $approved)
+  function approveStory($userId, $customerStoryId, $approved)
   {
     $story = CustomerStory::where('id', $customerStoryId)->whereHas('token', function ($query) use ($userId) {
       $query->where('merchant_id', $userId);

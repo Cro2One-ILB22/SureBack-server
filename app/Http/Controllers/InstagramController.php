@@ -28,7 +28,12 @@ class InstagramController extends Controller
 
     public function profile($username)
     {
-        return $this->instagramService->getProfile($username);
+        try {
+            $profile = $this->instagramService->getProfile($username);
+            return response()->json($profile);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 
     public function user($id)
@@ -88,7 +93,11 @@ class InstagramController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        return response()->json($this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id), 200);
+        try {
+            return response()->json($this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id), 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 
     public function updateStory()
