@@ -7,6 +7,8 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\InstagramService;
 use App\Services\OTPService;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class AuthController extends Controller
 {
@@ -31,8 +33,8 @@ class AuthController extends Controller
             $otpService = new OTPService();
 
             return response()->json($otpService->generateInstagramOTP($reqData));
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+        } catch (BadRequestException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -44,8 +46,8 @@ class AuthController extends Controller
             $instagramService = new InstagramService();
             $instagramId = $instagramService->getUniqueInstagramId($username);
             $instagramService->verifyOTP($username);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+        } catch (BadRequestException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
         return $this->registerUser($request, $instagramId);
     }
@@ -72,7 +74,7 @@ class AuthController extends Controller
         } else {
             return response()->json([
                 'message' => 'User registration failed'
-            ], 400);
+            ], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -86,7 +88,7 @@ class AuthController extends Controller
         $credentials = request(['email', 'password']);
 
         if (!auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
         return $this->respondWithToken(auth()->user());

@@ -6,8 +6,9 @@ use App\Models\CustomerStory;
 use App\Models\User;
 use App\Services\InstagramService;
 use App\Services\StoryService;
-use Exception;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class InstagramController extends Controller
 {
@@ -31,8 +32,8 @@ class InstagramController extends Controller
         try {
             $profile = $this->instagramService->getProfile($username);
             return response()->json($profile);
-        } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+        } catch (BadRequestException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -41,8 +42,8 @@ class InstagramController extends Controller
         try {
             $user = $this->instagramService->getUserInfo($id);
             return response()->json($user);
-        } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+        } catch (BadRequestException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -62,8 +63,8 @@ class InstagramController extends Controller
                 }
 
                 return response()->json($token);
-            } catch (Exception $e) {
-                return response()->json(['message' => $e->getMessage()], 400);
+            } catch (BadRequestException $e) {
+                return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
             }
         });
     }
@@ -73,8 +74,8 @@ class InstagramController extends Controller
         $token = request()->token;
         try {
             return $this->storyService->redeemToken($token, auth()->user());
-        } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+        } catch (BadRequestException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -85,18 +86,18 @@ class InstagramController extends Controller
         ])['story_id'];
         $story = CustomerStory::find($storyId);
         if (!$story) {
-            return response()->json(['message' => 'Story not found'], 404);
+            return response()->json(['message' => 'Story not found'], Response::HTTP_NOT_FOUND);
         }
 
         $user = auth()->user();
         if ($user->id != $story->customer_id) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
         try {
-            return response()->json($this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id), 200);
-        } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return response()->json($this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id));
+        } catch (BadRequestException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -109,16 +110,16 @@ class InstagramController extends Controller
         $storyId = $request['story_id'];
         $story = CustomerStory::find($storyId);
         if (!$story) {
-            return response()->json(['message' => 'Story not found'], 404);
+            return response()->json(['message' => 'Story not found'], Response::HTTP_NOT_FOUND);
         }
 
         $user = auth()->user();
         if ($user->id != $story->customer_id) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
         if (!$this->storyService->submitStory($story, $request['instagram_story_id'])) {
-            return response()->json(['message' => 'Failed to submit story'], 400);
+            return response()->json(['message' => 'Failed to submit story'], Response::HTTP_BAD_REQUEST);
         }
 
         return response()->json(['message' => 'Success']);
@@ -135,8 +136,8 @@ class InstagramController extends Controller
             $approved = $request['approved'];
 
             return $this->instagramService->approveStory(auth()->user()->id, $storyId, $approved);
-        } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+        } catch (BadRequestException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
     }
 }

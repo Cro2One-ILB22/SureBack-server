@@ -7,6 +7,7 @@ use App\Models\User;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class InstagramService
 {
@@ -52,7 +53,7 @@ class InstagramService
     $response = $response->$method($url, $queries, $body);
 
     if (!$response->successful()) {
-      throw new \Exception('Failed to request API');
+      throw new BadRequestException('Failed to request API');
     }
     return $response->json();
   }
@@ -194,7 +195,7 @@ class InstagramService
     $instagramProfile = $this->getProfileInfo($username);
 
     if (!$instagramProfile) {
-      throw new \Exception('Failed to get instagram profile');
+      throw new BadRequestException('Instagram profile not found');
     }
 
     $instagramId = $instagramProfile['id'];
@@ -203,7 +204,7 @@ class InstagramService
     ]);
 
     if ($validator->fails()) {
-      throw new \Exception('Instagram ID already exists');
+      throw new BadRequestException('Instagram already used');
     }
     return $instagramId;
   }
@@ -213,7 +214,7 @@ class InstagramService
     $instagramId = $this->getUniqueInstagramId($username);
     $otp = $this->getOTPFrom($instagramId);
     if (!$otp || !is_numeric($otp)) {
-      throw new \Exception('Failed to get OTP');
+      throw new BadRequestException('OTP not found');
     }
 
     $otpService = new OTPService();
@@ -223,7 +224,7 @@ class InstagramService
     ];
 
     if (!$otpService->verifyInstagramOTP($reqData)) {
-      throw new \Exception('Invalid OTP');
+      throw new BadRequestException('Invalid OTP');
     }
   }
 
@@ -233,7 +234,7 @@ class InstagramService
       $query->where('merchant_id', $userId);
     })->first();
     if (!$story) {
-      throw new \Exception('Story not found');
+      throw new BadRequestException('Story not found');
     }
 
     $story->status = strval(config('enums.story_status')[array_search($approved, config('enums.story_status'))]);

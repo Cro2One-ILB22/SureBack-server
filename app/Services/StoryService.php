@@ -23,7 +23,7 @@ class StoryService
     $dailyTokenLimit = $user->partnerDetail->daily_token_limit;
 
     if ($dailyTokenLimit && $todaysTokenCount >= $dailyTokenLimit) {
-      throw new \Exception('Daily token limit reached');
+      throw new BadRequestException('Daily token limit reached');
     }
 
     if (!$user->partnerDetail->is_active_generating_token) {
@@ -41,7 +41,7 @@ class StoryService
       $userPayingPower = $this->payStory($user->balance, $user->points, $cashbackAmount);
 
       if (!$userPayingPower) {
-        throw new \Exception('Insufficient balance');
+        throw new BadRequestException('Insufficient balance');
       }
 
       $balance_after = $userPayingPower['balance'];
@@ -111,13 +111,13 @@ class StoryService
     $encryptedToken = CryptoService::encrypt($token);
     $storyToken = StoryToken::where('token', $encryptedToken)->first();
     if (!$storyToken) {
-      throw new \Exception('Invalid token');
+      throw new BadRequestException('Invalid token');
     }
     if ($storyToken->expires_at < now()) {
-      throw new \Exception('Token expired');
+      throw new BadRequestException('Token expired');
     }
     if ($storyToken->story) {
-      throw new \Exception('Token already redeemed');
+      throw new BadRequestException('Token already redeemed');
     }
     $story = new CustomerStory([
       'instagram_id' => $customer->instagram_id,
