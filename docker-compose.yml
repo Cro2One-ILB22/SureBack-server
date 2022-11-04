@@ -1,0 +1,93 @@
+# For more information: https://laravel.com/docs/sail
+version: '3'
+
+x-common-variables: &common-variables
+    DB_CONNECTION: "${DB_CONNECTION:-mysql}"
+    DB_HOST: "${DB_HOST:-mysql}"
+    DB_PORT: "${DB_PORT:-3306}"
+    DB_DATABASE: "${DB_DATABASE:-sail}"
+    DB_USERNAME: "${DB_USERNAME:-sail}"
+    DB_PASSWORD: "${DB_PASSWORD:-password}"
+    REDIS_HOST: "${REDIS_HOST:-redis}"
+    REDIS_PASSWORD: "${REDIS_PASSWORD:-null}"
+    REDIS_PORT: "${REDIS_PORT:-6379}"
+    MAIL_MAILER: "${MAIL_MAILER:-smtp}"
+    MAIL_HOST: "${MAIL_HOST:-mailhog}"
+    MAIL_PORT: "${MAIL_PORT:-1025}"
+    MAIL_USERNAME: "${MAIL_USERNAME:-null}"
+    MAIL_PASSWORD: "${MAIL_PASSWORD:-null}"
+    MAIL_ENCRYPTION: "${MAIL_ENCRYPTION:-null}"
+    MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS}"
+    MAIL_FROM_NAME: "${MAIL_FROM_NAME}"
+    PUSHER_APP_ID: "${PUSHER_APP_ID}"
+    PUSHER_APP_KEY: "${PUSHER_APP_KEY}"
+    PUSHER_APP_SECRET: "${PUSHER_APP_SECRET}"
+    PUSHER_HOST: "${PUSHER_HOST}"
+    PUSHER_PORT: "${PUSHER_PORT:-443}"
+    PUSHER_SCHEME: "${PUSHER_SCHEME:-https}"
+    PUSHER_APP_CLUSTER: "${PUSHER_APP_CLUSTER:-mt1}"
+    RABBITMQ_HOST: "${RABBITMQ_HOST}"
+    RABBITMQ_PORT: "${RABBITMQ_PORT:-5672}"
+    RABBITMQ_USER: "${RABBITMQ_USER}"
+    RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+    RABBITMQ_VHOST: "${RABBITMQ_VHOST}"
+    FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID}"
+    FIREBASE_SERVER_KEY: "${FIREBASE_SERVER_KEY}"
+    FIREBASE_SENDER_ID: "${FIREBASE_SENDER_ID}"
+    INSTAGRAM_BASE_URL: "${INSTAGRAM_BASE_URL}"
+    INSTAGRAM_X_IG_APP_ID: "${INSTAGRAM_X_IG_APP_ID}"
+    INSTAGRAM_SESSION_ID: "${INSTAGRAM_SESSION_ID}"
+    INSTAGRAM_HOST: "${INSTAGRAM_HOST}"
+    INSTAGRAM_USER_AGENT: "${INSTAGRAM_USER_AGENT}"
+    INSTAGRAM_REFERER: "${INSTAGRAM_REFERER}"
+    INSTAGRAM_ORIGIN: "${INSTAGRAM_ORIGIN}"
+    CODE_CIPHERING: "${CODE_CIPHERING}"
+    CODE_DIGEST: "${CODE_DIGEST}"
+    CODE_ENCRYPTION_IV: "${CODE_ENCRYPTION_IV}"
+
+services:
+    main:
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.1
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: sail-8.1/app
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        ports:
+            - '${APP_PORT:-80}:80'
+            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            <<: *common-variables
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+    queue:
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.1
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: sail-8.1/queue
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            <<: *common-variables
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        command: php artisan queue:work
+networks:
+    sail:
+        driver: bridge
