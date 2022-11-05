@@ -1,0 +1,24 @@
+name: Queue
+
+on:
+  workflow_run:
+    workflows: ["Laravel"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: SSH
+        uses: "appleboy/ssh-action@master"
+        with:
+          host: ${{ secrets.QUEUE_HOST }}
+          username: ${{ secrets.QUEUE_USERNAME }}
+          password: ${{ secrets.QUEUE_PASSWORD }}
+          script: |
+            cd ${{ secrets.QUEUE_PATH }}
+            git pull --rebase
+            composer2 install --no-dev --optimize-autoloader
+            curl --basic --user ${{ secrets.QUEUE_API_KEY }}: -X POST https://${{ secrets.QUEUE_API_HOST }}/v1/service/${{ secrets.QUEUE_SERVICE_ID }}/restart/

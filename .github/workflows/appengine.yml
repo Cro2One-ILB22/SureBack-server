@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: "Deploy to App Engine"
+name: "App Engine"
 
-# on workflow Laravel tests passing
 on:
   workflow_run:
     workflows: ["Laravel"]
