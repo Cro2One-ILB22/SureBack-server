@@ -215,13 +215,18 @@ class StoryService
       return false;
     }
 
-    $story = CustomerStory::where('id', $customerStory->id)
-      ->update([
-        'instagram_story_id' => $instagramStoryId,
-        'image_uri' => $mentionedStory['image_versions2']['candidates'][0]['url'],
-        'status' => strval(config('enums.story_status.review')),
-        'submitted_at' => now(),
-      ]);
+    $story = CustomerStory::where('id', $customerStory->id)->first();
+    if (!$story) {
+      return false;
+    }
+    $story->update([
+      'instagram_story_id' => $instagramStoryId,
+      'image_uri' => $mentionedStory['image_versions2']['candidates'][0]['url'],
+      'approval_status' => strval(config('enums.story_approval_status.review')),
+      'status' => strval(config('enums.story_status.uploaded')),
+      'submitted_at' => now(),
+    ]);
+
     return $story;
   }
 

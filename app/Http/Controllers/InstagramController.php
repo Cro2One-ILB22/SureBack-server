@@ -57,9 +57,10 @@ class InstagramController extends Controller
                 $customer_id = request()->customer_id;
                 if ($customer_id) {
                     $customer = User::find($customer_id);
-                    if ($customer) {
-                        return $this->storyService->redeemToken($token['token'], $customer);
+                    if (!$customer) {
+                        throw new BadRequestException('Customer not found');
                     }
+                    return $this->storyService->redeemToken($token['token'], $customer);
                 }
 
                 return response()->json($token);

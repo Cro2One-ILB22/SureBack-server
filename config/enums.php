@@ -21,9 +21,14 @@ return [
     'debit' => 'D',
     'credit' => 'C',
   ],
-  'story_status' => [
+  'story_approval_status' => [
     'rejected' => 0,
     'approved' => 1,
     'review' => 2,
+  ],
+  'story_status' => [
+    'uploaded' => 'uploaded',
+    'validated' => 'validated',
+    'deleted' => 'deleted',
   ],
 ];

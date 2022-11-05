@@ -237,7 +237,7 @@ class InstagramService
       throw new BadRequestException('Story not found');
     }
 
-    $story->status = strval(config('enums.story_status')[array_search($approved, config('enums.story_status'))]);
+    $story->approval_status = strval(config('enums.story_approval_status')[array_search($approved, config('enums.story_approval_status'))]);
     $story->save();
 
     return $story;
