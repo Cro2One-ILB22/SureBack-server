@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('partner_details', function (Blueprint $table) {
+        Schema::create('merchant_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->float('cashback_percent')->nullable();
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('partner_details');
+        Schema::dropIfExists('merchant_details');
     }
 };

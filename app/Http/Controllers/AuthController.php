@@ -67,8 +67,8 @@ class AuthController extends Controller
         $user->roles()->attach(Role::where('slug', $role)->first());
 
         if ($user) {
-            if ($role === 'partner') {
-                $user->partnerDetail()->create();
+            if ($role === 'merchant') {
+                $user->merchantDetail()->create();
             }
             return $this->respondWithToken($user);
         } else {
@@ -102,8 +102,8 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
-        if ($user->roles->contains('slug', 'partner')) {
-            $user->partnerDetail->makeHidden(['user', 'user_id', 'created_at', 'updated_at']);
+        if ($user->roles->contains('slug', 'merchant')) {
+            $user->merchantDetail->makeHidden(['user', 'user_id', 'created_at', 'updated_at']);
         }
         $roles = $user->roles->pluck('slug');
         unset($user->roles);

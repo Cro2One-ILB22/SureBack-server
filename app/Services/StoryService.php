@@ -12,23 +12,23 @@ class StoryService
 {
   public function generateToken(User $user, int $purchaseAmount)
   {
-    $todaysTokenCount = StoryToken::where('partner_id', $user->id)
+    $todaysTokenCount = StoryToken::where('merchant_id', $user->id)
       ->where('created_at', '>=', now('Asia/Jakarta')->startOfDay())
       ->count();
-    $dailyTokenLimit = $user->partnerDetail->daily_token_limit;
+    $dailyTokenLimit = $user->merchantDetail->daily_token_limit;
 
     if ($dailyTokenLimit && $todaysTokenCount >= $dailyTokenLimit) {
       throw new BadRequestException('Daily token limit reached');
     }
 
-    if (!$user->partnerDetail->is_active_generating_token) {
+    if (!$user->merchantDetail->is_active_generating_token) {
       throw new BadRequestException('You don\'t activate token generation');
     }
 
     return DB::transaction(function () use ($user, $purchaseAmount) {
-      $cashbackPercent = $user->partnerDetail->cashback_percent;
+      $cashbackPercent = $user->merchantDetail->cashback_percent;
       $cashbackAmount = intval((($cashbackPercent ?? 0) / 100) * $purchaseAmount);
-      // $cashbackLimit = $user->partnerDetail->cashback_limit;
+      // $cashbackLimit = $user->merchantDetail->cashback_limit;
       // if ($cashbackLimit) {
       //   $cashbackAmount = min($cashbackAmount, $cashbackLimit);
       // }
@@ -94,7 +94,7 @@ class StoryService
         'instagram_id' => $instagramId,
         'expires_at' => now()->addHours(18),
       ]);
-      $storyToken->partner()->associate($user);
+      $storyToken->merchant()->associate($user);
       $storyToken->save();
       // $storyToken->transactions()->attach($transaction);
       return [
@@ -123,7 +123,7 @@ class StoryService
     $story->token()->associate($storyToken);
     $story->customer()->associate($customer);
     $story->save();
-    return $storyToken->load('partner', 'story');
+    return $storyToken->load('merchant', 'story');
   }
 
   // private function payStory($balance, $points, $paymentAmount)

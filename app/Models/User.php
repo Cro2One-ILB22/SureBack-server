@@ -84,7 +84,7 @@ class User extends Authenticatable
 
     public function storyTokens()
     {
-        return $this->hasMany(StoryToken::class, 'partner_id');
+        return $this->hasMany(StoryToken::class, 'merchant_id');
     }
 
     public function stories()
@@ -92,8 +92,8 @@ class User extends Authenticatable
         return $this->hasMany(CustomerStory::class, 'customer_id');
     }
 
-    public function partnerDetail()
+    public function merchantDetail()
     {
-        return $this->hasOne(PartnerDetail::class);
+        return $this->hasOne(MerchantDetail::class);
     }
 }

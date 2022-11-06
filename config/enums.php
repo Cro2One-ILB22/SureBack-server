@@ -5,7 +5,7 @@ return [
     'super_admin' => 'Super Admin',
     'admin' => 'Admin',
     'user' => 'User',
-    'partner' => 'Partner',
+    'merchant' => 'Merchant',
     'customer' => 'Customer',
   ],
   'otp_factor' => [
@@ -14,7 +14,7 @@ return [
     'instagram',
   ],
   'registerable_role' => [
-    'partner',
+    'merchant',
     'customer',
   ],
   'transaction_type' => [

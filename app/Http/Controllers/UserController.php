@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UpdatePartnerDetailRequest;
+use App\Http\Requests\UpdateMerchantDetailRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Models\PartnerDetail;
+use App\Models\MerchantDetail;
 use App\Models\User;
 use Illuminate\Http\Response;
 
@@ -15,11 +15,11 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function partner()
+    public function merchant()
     {
         $response = [
             'results' => User::whereHas('roles', function ($query) {
-                $query->where('slug', 'partner');
+                $query->where('slug', 'merchant');
             })->get(),
         ];
 
@@ -62,10 +62,10 @@ class UserController extends Controller
         }
     }
 
-    public function updatePartnerDetail(UpdatePartnerDetailRequest $request)
+    public function updateMerchantDetail(UpdateMerchantDetailRequest $request)
     {
-        $partnerDetail = PartnerDetail::where('user_id', auth()->user()->id)->first();
-        $partnerDetail->update($request->validated());
-        return response()->json($partnerDetail);
+        $merchantDetail = auth()->user()->merchantDetail;
+        $merchantDetail->update($request->validated());
+        return response()->json($merchantDetail);
     }
 }

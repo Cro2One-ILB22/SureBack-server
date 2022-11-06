@@ -21,7 +21,7 @@ class StoryToken extends Model
     ];
 
     protected $hidden = [
-        'partner_id'
+        'merchant_id'
     ];
 
     protected function token(): Attribute
@@ -32,9 +32,9 @@ class StoryToken extends Model
         );
     }
 
-    public function partner()
+    public function merchant()
     {
-        return $this->belongsTo(User::class, 'partner_id');
+        return $this->belongsTo(User::class, 'merchant_id');
     }
 
     public function story()
