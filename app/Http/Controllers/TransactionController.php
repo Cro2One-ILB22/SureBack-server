@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SuccessfulTransaction;
+use App\Models\Ledger;
 
 class TransactionController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
-        $transactions = SuccessfulTransaction::whereHas('transaction', function ($query) use ($user) {
+        $transactions = Ledger::whereHas('transaction', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->with('transaction.category')->get();
 

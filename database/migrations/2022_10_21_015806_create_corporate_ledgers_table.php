@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('corporate_transactions', function (Blueprint $table) {
+        Schema::create('corporate_ledgers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('financial_transaction_id')->nullable();
             $table->bigInteger('amount');
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('corporate_transactions');
+        Schema::dropIfExists('corporate_ledgers');
     }
 };

@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\CorporateTransaction;
+use App\Models\CorporateLedger;
 use App\Models\CustomerStory;
 use App\Models\FinancialTransaction;
 use App\Models\StoryToken;
-use App\Models\SuccessfulTransaction;
+use App\Models\Ledger;
 use App\Models\TransactionCategory;
 use App\Models\TransactionStatus;
 use App\Models\User;
@@ -58,35 +58,35 @@ class StoryService
       $transaction->status()->associate($transactionStatus);
       $transaction->save();
 
-      $successfulTransaction = new SuccessfulTransaction([
+      $ledger = new Ledger([
         'balance_before' => $balance_before,
         'balance_after' => $balance_after,
         'points_before' => $points_before,
         'points_after' => $points_after,
       ]);
 
-      $successfulTransaction->transaction()->associate($transaction);
-      $successfulTransaction->save();
+      $ledger->transaction()->associate($transaction);
+      $ledger->save();
 
       $user->balance = $balance_after;
       $user->points = $points_after;
       $user->save();
 
       $corporateBalanceBefore = 0;
-      $corporateTransaction = CorporateTransaction::get()->last();
+      $corporateLedger = CorporateLedger::get()->last();
 
-      if ($corporateTransaction) {
-        $corporateBalanceBefore = $corporateTransaction->balance_after;
+      if ($corporateLedger) {
+        $corporateBalanceBefore = $corporateLedger->balance_after;
       }
 
-      $corporateTransaction = new CorporateTransaction([
+      $corporateLedger = new CorporateLedger([
         'amount' => $cashbackAmount,
         'type' => 'C',
         'balance_before' => $corporateBalanceBefore,
         'balance_after' => $corporateBalanceBefore + $cashbackAmount,
       ]);
-      $corporateTransaction->financialTransaction()->associate($transaction);
-      $corporateTransaction->save();
+      $corporateLedger->financialTransaction()->associate($transaction);
+      $corporateLedger->save();
 
       $instagramId = $user->instagram_id;
       $token = $this->generateUniqueToken($instagramId);

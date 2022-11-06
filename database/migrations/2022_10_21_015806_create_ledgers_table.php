@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('successful_transactions', function (Blueprint $table) {
+        Schema::create('ledgers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('financial_transaction_id');
             $table->bigInteger('balance_before');
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('successful_transactions');
+        Schema::dropIfExists('ledgers');
     }
 };

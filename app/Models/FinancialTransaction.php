@@ -38,14 +38,14 @@ class FinancialTransaction extends Model
         return $this->hasOne(Withdrawal::class);
     }
 
-    public function successfulTransactions()
+    public function ledgers()
     {
-        return $this->hasMany(SuccessfulTransaction::class);
+        return $this->hasMany(Ledger::class);
     }
 
-    public function corporateTransaction()
+    public function corporateLedger()
     {
-        return $this->hasOne(CorporateTransaction::class);
+        return $this->hasOne(CorporateLedger::class);
     }
 
     public function cashback()
