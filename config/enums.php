@@ -31,4 +31,8 @@ return [
     'validated' => 'validated',
     'deleted' => 'deleted',
   ],
+  'payment_instrument' => [
+    'coins' => 'coins',
+    'balance' => 'balance',
+  ],
 ];

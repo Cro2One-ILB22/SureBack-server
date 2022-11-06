@@ -20,6 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('cashback_limit')->nullable();
             $table->unsignedInteger('daily_token_limit')->nullable();
             $table->boolean('is_active_generating_token')->default(true);
+            $table->bigInteger('outstanding_coins')->default(0);
+            $table->bigInteger('exchanged_coins')->default(0);
             $table->timestamps();
         });
     }

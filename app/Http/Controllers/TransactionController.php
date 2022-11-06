@@ -17,13 +17,10 @@ class TransactionController extends Controller
             return [
                 'id' => $transaction->id,
                 'amount' => $transaction->transaction->amount,
-                'balance_after' => $transaction->balance_after,
-                'balance_before' => $transaction->balance_before,
-                'points_before' => $transaction->points_before,
-                'points_after' => $transaction->points_after,
                 'category' => $transaction->transaction->category->slug,
                 'description' => $transaction->transaction->description,
                 'type' => $transaction->transaction->type,
+                'instrument' => $transaction->instrument,
                 'created_at' => $transaction->created_at,
             ];
         });

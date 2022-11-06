@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('token')->unique();
             $table->unsignedBigInteger('instagram_id');
             $table->bigInteger('purchase_amount');
+            $table->bigInteger('cashback_amount');
+            $table->float('cashback_percent')->nullable();
             $table->foreignId('partner_id');
             $table->timestamp('expires_at');
             $table->timestamps();

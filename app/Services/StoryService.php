@@ -2,13 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\CorporateLedger;
 use App\Models\CustomerStory;
-use App\Models\FinancialTransaction;
 use App\Models\StoryToken;
-use App\Models\Ledger;
-use App\Models\TransactionCategory;
-use App\Models\TransactionStatus;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
@@ -31,74 +26,77 @@ class StoryService
     }
 
     return DB::transaction(function () use ($user, $purchaseAmount) {
-      $cashbackAmount = intval((($user->partnerDetail->cashback_percent ?? 0) / 100) * $purchaseAmount);
-      $cashbackLimit = $user->partnerDetail->cashback_limit;
-      if ($cashbackLimit) {
-        $cashbackAmount = min($cashbackAmount, $cashbackLimit);
-      }
-      $balance_before = $user->balance;
-      $points_before = $user->points;
-      $userPayingPower = $this->payStory($user->balance, $user->points, $cashbackAmount);
+      $cashbackPercent = $user->partnerDetail->cashback_percent;
+      $cashbackAmount = intval((($cashbackPercent ?? 0) / 100) * $purchaseAmount);
+      // $cashbackLimit = $user->partnerDetail->cashback_limit;
+      // if ($cashbackLimit) {
+      //   $cashbackAmount = min($cashbackAmount, $cashbackLimit);
+      // }
+      // $balance_before = $user->balance;
+      // $points_before = $user->points;
+      // $userPayingPower = $this->payStory($user->balance, $user->points, $cashbackAmount);
 
-      if (!$userPayingPower) {
-        throw new BadRequestException('Insufficient balance');
-      }
+      // if (!$userPayingPower) {
+      //   throw new BadRequestException('Insufficient balance');
+      // }
 
-      $balance_after = $userPayingPower['balance'];
-      $points_after = $userPayingPower['points'];
+      // $balance_after = $userPayingPower['balance'];
+      // $points_after = $userPayingPower['points'];
 
-      $transactionCategory = TransactionCategory::where('slug', 'story')->first();
-      $transactionStatus = TransactionStatus::where('name', 'success')->first();
-      $transaction = new FinancialTransaction([
-        'amount' => $cashbackAmount,
-        'type' => 'D',
-      ]);
-      $transaction->user()->associate($user);
-      $transaction->category()->associate($transactionCategory);
-      $transaction->status()->associate($transactionStatus);
-      $transaction->save();
+      // $transactionCategory = TransactionCategory::where('slug', 'story')->first();
+      // $transactionStatus = TransactionStatus::where('name', 'success')->first();
+      // $transaction = new FinancialTransaction([
+      //   'amount' => $cashbackAmount,
+      //   'type' => 'D',
+      // ]);
+      // $transaction->user()->associate($user);
+      // $transaction->category()->associate($transactionCategory);
+      // $transaction->status()->associate($transactionStatus);
+      // $transaction->save();
 
-      $ledger = new Ledger([
-        'balance_before' => $balance_before,
-        'balance_after' => $balance_after,
-        'points_before' => $points_before,
-        'points_after' => $points_after,
-      ]);
+      // $ledger = new Ledger([
+      //   'balance_before' => $balance_before,
+      //   'balance_after' => $balance_after,
+      //   'points_before' => $points_before,
+      //   'points_after' => $points_after,
+      // ]);
 
-      $ledger->transaction()->associate($transaction);
-      $ledger->save();
+      // $ledger->transaction()->associate($transaction);
+      // $ledger->save();
 
-      $user->balance = $balance_after;
-      $user->points = $points_after;
-      $user->save();
+      // $user->balance = $balance_after;
+      // $user->points = $points_after;
+      // $user->save();
 
-      $corporateBalanceBefore = 0;
-      $corporateLedger = CorporateLedger::get()->last();
+      // $corporateBalanceBefore = 0;
+      // $corporateLedger = CorporateLedger::get()->last();
 
-      if ($corporateLedger) {
-        $corporateBalanceBefore = $corporateLedger->balance_after;
-      }
+      // if ($corporateLedger) {
+      //   $corporateBalanceBefore = $corporateLedger->balance_after;
+      // }
 
-      $corporateLedger = new CorporateLedger([
-        'amount' => $cashbackAmount,
-        'type' => 'C',
-        'balance_before' => $corporateBalanceBefore,
-        'balance_after' => $corporateBalanceBefore + $cashbackAmount,
-      ]);
-      $corporateLedger->financialTransaction()->associate($transaction);
-      $corporateLedger->save();
+      // $corporateLedger = new CorporateLedger([
+      //   'amount' => $cashbackAmount,
+      //   'type' => 'C',
+      //   'balance_before' => $corporateBalanceBefore,
+      //   'balance_after' => $corporateBalanceBefore + $cashbackAmount,
+      // ]);
+      // $corporateLedger->financialTransaction()->associate($transaction);
+      // $corporateLedger->save();
 
       $instagramId = $user->instagram_id;
       $token = $this->generateUniqueToken($instagramId);
       $storyToken = new StoryToken([
         'token' => $token,
         'purchase_amount' => $purchaseAmount,
+        'cashback_amount' => $cashbackAmount,
+        'cashback_percent' => $cashbackPercent,
         'instagram_id' => $instagramId,
         'expires_at' => now()->addHours(18),
       ]);
       $storyToken->partner()->associate($user);
       $storyToken->save();
-      $storyToken->transactions()->attach($transaction);
+      // $storyToken->transactions()->attach($transaction);
       return [
         'token' => $token,
         'cashback_amount' => $cashbackAmount,
@@ -128,21 +126,21 @@ class StoryService
     return $storyToken->load('partner', 'story');
   }
 
-  private function payStory($balance, $points, $paymentAmount)
-  {
-    $points -= $paymentAmount;
-    if ($points < 0) {
-      $balance += $points;
-      $points = 0;
-    }
-    if ($balance < 0) {
-      return false;
-    }
-    return [
-      'balance' => $balance,
-      'points' => $points
-    ];
-  }
+  // private function payStory($balance, $points, $paymentAmount)
+  // {
+  //   $points -= $paymentAmount;
+  //   if ($points < 0) {
+  //     $balance += $points;
+  //     $points = 0;
+  //   }
+  //   if ($balance < 0) {
+  //     return false;
+  //   }
+  //   return [
+  //     'balance' => $balance,
+  //     'points' => $points
+  //   ];
+  // }
 
   public function getMentioningStories(int $uploader, int $mentioned)
   {

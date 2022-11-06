@@ -38,6 +38,8 @@ class PartnerDetail extends Model
         'cashback_limit' => 'integer',
         'daily_token_limit' => 'integer',
         'is_active_generating_token' => 'boolean',
+        'outstanding_coin' => 'integer',
+        'exchanged_coin' => 'integer',
     ];
 
     public function todaysTokenCount(): Attribute

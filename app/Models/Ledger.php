@@ -10,25 +10,17 @@ class Ledger extends Model
     use HasFactory;
 
     protected $fillable = [
-        'balance_before',
-        'balance_after',
-        'points_before',
-        'points_after',
+        'before',
+        'after',
     ];
 
     protected $appends = [
-        'balance_change',
-        'points_change',
+        'change',
     ];
 
-    public function getBalanceChangeAttribute(): int
+    public function getChangeAttribute(): int
     {
-        return $this->balance_after - $this->balance_before;
-    }
-
-    public function getPointsChangeAttribute(): int
-    {
-        return $this->points_after - $this->points_before;
+        return $this->after - $this->before;
     }
 
     public function transaction()

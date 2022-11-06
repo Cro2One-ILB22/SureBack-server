@@ -16,10 +16,9 @@ return new class extends Migration
         Schema::create('ledgers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('financial_transaction_id');
-            $table->bigInteger('balance_before');
-            $table->bigInteger('balance_after');
-            $table->bigInteger('points_before');
-            $table->bigInteger('points_after');
+            $table->bigInteger('before');
+            $table->bigInteger('after');
+            $table->enum('instrument', config('enums.payment_instrument'));
             $table->timestamps();
         });
     }

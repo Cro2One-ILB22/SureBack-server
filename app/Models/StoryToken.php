@@ -14,12 +14,10 @@ class StoryToken extends Model
     protected $fillable = [
         'token',
         'purchase_amount',
+        'cashback_amount',
+        'cashback_percent',
         'instagram_id',
         'expires_at',
-    ];
-
-    protected $appends = [
-        'cashback_amount',
     ];
 
     protected $hidden = [
@@ -42,13 +40,6 @@ class StoryToken extends Model
     public function story()
     {
         return $this->hasOne(CustomerStory::class);
-    }
-
-    public function cashbackAmount(): Attribute
-    {
-        return new Attribute(
-            fn () => $this->transactions()->first()->amount
-        );
     }
 
     public function transactions()
