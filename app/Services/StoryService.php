@@ -248,6 +248,22 @@ class StoryService
       ->toArray();
   }
 
+  function approveStory($userId, $storyRequest)
+  {
+    $story = CustomerStory::where('id', $storyRequest['id'])->whereHas('token', function ($query) use ($userId) {
+      $query->where('merchant_id', $userId);
+    })->first();
+    if (!$story) {
+      throw new BadRequestException('Story not found');
+    }
+
+    $story->approval_status = StoryApprovalStatusEnum::from($storyRequest['approved']);
+    $story->note = $storyRequest['note'] ?? null;
+    $story->save();
+
+    return $story;
+  }
+
   private function getMentionedStory(CustomerStory $customerStory, $instagramStoryId)
   {
     $stories = $this->getStories($customerStory->instagram_id);

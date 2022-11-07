@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ApproveCustomerStoryRequest;
 use App\Models\CustomerStory;
 use App\Models\User;
 use App\Services\InstagramService;
@@ -126,17 +127,12 @@ class InstagramController extends Controller
         return response()->json(['message' => 'Success']);
     }
 
-    public function approveStory()
+    public function approveStory(ApproveCustomerStoryRequest $request)
     {
         try {
-            $request = request()->validate([
-                'id' => 'required',
-                'approved' => 'required|boolean',
-            ]);
-            $storyId = $request['id'];
-            $approved = $request['approved'];
+            $validated = $request->validated();
 
-            return $this->instagramService->approveStory(auth()->user()->id, $storyId, $approved);
+            return $this->storyService->approveStory(auth()->user()->id, $validated);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }

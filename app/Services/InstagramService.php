@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\StoryApprovalStatusEnum;
-use App\Models\CustomerStory;
 use App\Models\User;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
@@ -227,20 +225,5 @@ class InstagramService
     if (!$otpService->verifyInstagramOTP($reqData)) {
       throw new BadRequestException('Invalid OTP');
     }
-  }
-
-  function approveStory($userId, $customerStoryId, $approved)
-  {
-    $story = CustomerStory::where('id', $customerStoryId)->whereHas('token', function ($query) use ($userId) {
-      $query->where('merchant_id', $userId);
-    })->first();
-    if (!$story) {
-      throw new BadRequestException('Story not found');
-    }
-
-    $story->approval_status = StoryApprovalStatusEnum::from($approved);
-    $story->save();
-
-    return $story;
   }
 }
