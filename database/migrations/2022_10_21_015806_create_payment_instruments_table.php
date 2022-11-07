@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\PaymentInstrumentEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,12 +13,10 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('ledgers', function (Blueprint $table) {
+        Schema::create('payment_instruments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('financial_transaction_id');
-            $table->foreignId('payment_instrument_id');
-            $table->bigInteger('before');
-            $table->bigInteger('after');
+            $table->string('slug');
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -31,6 +28,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('ledgers');
+        Schema::dropIfExists('payment_instruments');
     }
 };

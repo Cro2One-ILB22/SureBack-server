@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::table('ledgers', function (Blueprint $table) {
             $table->foreign('financial_transaction_id')->references('id')->on('financial_transactions')->restrictOnDelete();
+            $table->foreign('payment_instrument_id')->references('id')->on('payment_instruments')->restrictOnDelete();
         });
     }
 
@@ -27,6 +28,7 @@ return new class extends Migration
     {
         Schema::table('ledgers', function (Blueprint $table) {
             $table->dropForeign('ledgers_financial_transaction_id_foreign');
+            $table->dropForeign('ledgers_payment_instrument_id_foreign');
         });
     }
 };

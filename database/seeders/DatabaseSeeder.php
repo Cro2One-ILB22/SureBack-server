@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             TransactionStatusSeeder::class,
             OtpFactorSeeder::class,
             TransactionCategorySeeder::class,
+            PaymentInstrumentSeeder::class,
         ]);
     }
 }
