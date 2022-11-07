@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\InstagramStoryStatusEnum;
+use App\Enums\StoryApprovalStatusEnum;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +16,7 @@ class CustomerStory extends Model
         'instagram_id',
         'image_uri',
         'approval_status',
-        'status',
+        'instagram_story_status',
         'submitted_at',
     ];
 
@@ -26,6 +28,20 @@ class CustomerStory extends Model
     protected $appends = [
         'story_url',
     ];
+
+    protected $casts = [
+        'instagram_id' => 'string',
+        'image_uri' => 'string',
+        'approval_status' => StoryApprovalStatusEnum::class,
+        'instagram_story_status' => InstagramStoryStatusEnum::class,
+    ];
+
+    public function approvalStatus(): Attribute
+    {
+        return new Attribute(
+            set: fn ($value) => strval($value->value),
+        );
+    }
 
     public function storyUrl(): Attribute
     {

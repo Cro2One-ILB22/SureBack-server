@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TransactionTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +17,11 @@ class FinancialTransaction extends Model
         // 'reference',
         // 'reference_type',
         // 'reference_id',
+    ];
+
+    protected $casts = [
+        'amount' => 'float',
+        'type' => TransactionTypeEnum::class,
     ];
 
     public function user()

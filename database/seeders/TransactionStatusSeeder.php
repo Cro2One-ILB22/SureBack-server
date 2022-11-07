@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\TransactionStatusEnum;
 use App\Models\TransactionStatus;
 use Illuminate\Database\Seeder;
 
@@ -14,19 +15,11 @@ class TransactionStatusSeeder extends Seeder
      */
     public function run()
     {
-        $statuses = [
-            'created',
-            'pending',
-            'processing',
-            'success',
-            'failed',
-            'cancelled',
-            'refunded',
-            'expired',
-        ];
-        foreach ($statuses as $status) {
+        foreach (TransactionStatusEnum::fullNames() as $slug => $name) {
             TransactionStatus::firstOrCreate([
-                'name' => $status,
+                'slug' => $slug,
+            ], [
+                'name' => $name,
             ]);
         }
     }

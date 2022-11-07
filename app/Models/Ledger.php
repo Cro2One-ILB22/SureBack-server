@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentInstrumentEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +17,12 @@ class Ledger extends Model
 
     protected $appends = [
         'change',
+    ];
+
+    protected $casts = [
+        'before' => 'float',
+        'after' => 'float',
+        'instrument' => PaymentInstrumentEnum::class,
     ];
 
     public function getChangeAttribute(): int

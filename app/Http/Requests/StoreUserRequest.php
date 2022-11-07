@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\RegisterableRoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreUserRequest extends FormRequest
@@ -28,7 +29,7 @@ class StoreUserRequest extends FormRequest
             'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|min:6',
             'username' => 'required|string',
-            'role' => 'required|string|in:' . implode(',', config('enums.registerable_role')),
+            'role' => 'required|string|in:' . implode(',', RegisterableRoleEnum::values()),
         ];
     }
 }

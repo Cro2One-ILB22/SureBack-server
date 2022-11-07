@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PaymentInstrumentEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +19,7 @@ return new class extends Migration
             $table->foreignId('financial_transaction_id');
             $table->bigInteger('before');
             $table->bigInteger('after');
-            $table->enum('instrument', config('enums.payment_instrument'));
+            $table->enum('instrument', PaymentInstrumentEnum::values());
             $table->timestamps();
         });
     }

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\InstagramStoryStatusEnum;
+use App\Enums\StoryApprovalStatusEnum;
 use App\Models\CustomerStory;
 use App\Models\StoryToken;
 use App\Models\User;
@@ -44,7 +46,7 @@ class StoryService
       // $points_after = $userPayingPower['points'];
 
       // $transactionCategory = TransactionCategory::where('slug', 'story')->first();
-      // $transactionStatus = TransactionStatus::where('name', 'success')->first();
+      // $transactionStatus = TransactionStatus::where('slug', 'success')->first();
       // $transaction = new FinancialTransaction([
       //   'amount' => $cashbackAmount,
       //   'type' => 'D',
@@ -192,9 +194,8 @@ class StoryService
     $queries = [
       'reel_ids' => $instagramId,
     ];
-    $url = $this->baseUrl . $path;
 
-    $responseJson = InstagramService::callAPI('GET', $url, $queries);
+    $responseJson = InstagramService::callAPI('GET', $path, $queries);
 
     $reels = $responseJson['reels_media'];
     if (count($reels) > 0) {
@@ -220,8 +221,8 @@ class StoryService
     $story->update([
       'instagram_story_id' => $instagramStoryId,
       'image_uri' => $mentionedStory['image_versions2']['candidates'][0]['url'],
-      'approval_status' => strval(config('enums.story_approval_status.review')),
-      'status' => strval(config('enums.story_status.uploaded')),
+      'approval_status' => StoryApprovalStatusEnum::REVIEW,
+      'instagram_story_status' => InstagramStoryStatusEnum::UPLOADED,
       'submitted_at' => now(),
     ]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TransactionTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +15,13 @@ class CorporateLedger extends Model
         'type',
         'balance_before',
         'balance_after',
+    ];
+
+    protected $casts = [
+        'amount' => 'float',
+        'balance_before' => 'float',
+        'balance_after' => 'float',
+        'type' => TransactionTypeEnum::class,
     ];
 
     public function financialTransaction()

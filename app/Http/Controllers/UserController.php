@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleEnum;
 use App\Http\Requests\UpdateMerchantDetailRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\MerchantDetail;
@@ -19,7 +20,7 @@ class UserController extends Controller
     {
         $response = [
             'results' => User::whereHas('roles', function ($query) {
-                $query->where('slug', 'merchant');
+                $query->where('slug', RoleEnum::MERCHANT);
             })->get(),
         ];
 
@@ -35,7 +36,7 @@ class UserController extends Controller
     {
         $response = [
             'results' => User::whereHas('roles', function ($query) {
-                $query->where('slug', 'customer');
+                $query->where('slug', RoleEnum::CUSTOMER);
             })->get(),
         ];
 

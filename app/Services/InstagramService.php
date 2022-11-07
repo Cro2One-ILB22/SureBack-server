@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\StoryApprovalStatusEnum;
 use App\Models\CustomerStory;
 use App\Models\User;
 use GuzzleHttp\Cookie\CookieJar;
@@ -237,7 +238,7 @@ class InstagramService
       throw new BadRequestException('Story not found');
     }
 
-    $story->approval_status = strval(config('enums.story_approval_status')[array_search($approved, config('enums.story_approval_status'))]);
+    $story->approval_status = StoryApprovalStatusEnum::from($approved);
     $story->save();
 
     return $story;

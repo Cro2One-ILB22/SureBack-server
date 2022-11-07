@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\TransactionCategoryEnum;
 use App\Models\TransactionCategory;
 use Illuminate\Database\Seeder;
 
@@ -14,15 +15,10 @@ class TransactionCategorySeeder extends Seeder
      */
     public function run()
     {
-        $categories = [
-            'deposit' => 'Deposit',
-            'cashback' => 'Cashback',
-            'withdrawal' => 'Withdrawal',
-            'story' => 'Story',
-        ];
-        foreach ($categories as $slug => $name) {
+        foreach (TransactionCategoryEnum::fullNames() as $slug => $name) {
             TransactionCategory::firstOrCreate([
                 'slug' => $slug,
+            ], [
                 'name' => $name,
             ]);
         }

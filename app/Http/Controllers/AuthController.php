@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RegisterableRoleEnum;
+use App\Enums\RoleEnum;
 use App\Http\Requests\StoreUserRequest;
 use App\Models\Role;
 use App\Models\User;
@@ -60,14 +62,14 @@ class AuthController extends Controller
                 'instagram_username' => $request->safe()->username,
             ])
             ->except('username');
-        $role = $validated['role'];
+        $role = RegisterableRoleEnum::from($validated['role']);
         $user = User::create($validated);
 
-        $user->roles()->attach(Role::where('slug', 'user')->first());
+        $user->roles()->attach(Role::where('slug', RoleEnum::USER)->first());
         $user->roles()->attach(Role::where('slug', $role)->first());
 
         if ($user) {
-            if ($role === 'merchant') {
+            if ($role === RegisterableRoleEnum::MERCHANT) {
                 $user->merchantDetail()->create();
             }
             return $this->respondWithToken($user);
@@ -102,7 +104,7 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
-        if ($user->roles->contains('slug', 'merchant')) {
+        if ($user->roles->contains('slug', RoleEnum::MERCHANT)) {
             $user->merchantDetail->makeHidden(['user', 'user_id', 'created_at', 'updated_at']);
         }
         $roles = $user->roles->pluck('slug');

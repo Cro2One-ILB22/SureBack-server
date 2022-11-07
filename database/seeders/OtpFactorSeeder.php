@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\OTPFactorEnum;
 use App\Models\OtpFactor;
 use Illuminate\Database\Seeder;
 
@@ -14,7 +15,7 @@ class OtpFactorSeeder extends Seeder
      */
     public function run()
     {
-        foreach (config('enums.otp_factor') as $slug) {
+        foreach (OTPFactorEnum::values() as $slug) {
             OtpFactor::firstOrCreate([
                 'slug' => $slug,
             ]);

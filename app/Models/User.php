@@ -38,15 +38,6 @@ class User extends Authenticatable
         'story_tokens'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-
     protected function password(): Attribute
     {
         return new Attribute(
