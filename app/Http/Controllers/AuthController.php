@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\InstagramService;
 use App\Services\OTPService;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class AuthController extends Controller
@@ -62,22 +63,34 @@ class AuthController extends Controller
                 'instagram_username' => $request->safe()->username,
             ])
             ->except('username');
-        $role = RegisterableRoleEnum::from($validated['role']);
-        $user = User::create($validated);
+        $user = DB::transaction(function () use ($validated) {
+            $role = RegisterableRoleEnum::from($validated['role']);
+            $user = User::create($validated);
 
-        $user->roles()->attach(Role::where('slug', RoleEnum::USER)->first());
-        $user->roles()->attach(Role::where('slug', $role)->first());
+            $user->roles()->attach(Role::where('slug', RoleEnum::USER)->first());
+            $user->roles()->attach(Role::where('slug', $role)->first());
+            $this->instagramService->getProfile($user->instagram_username);
 
+            if ($user) {
         if ($user) {
             if ($role === RegisterableRoleEnum::MERCHANT) {
                 $user->merchantDetail()->create();
             }
             return $this->respondWithToken($user);
         } else {
+                if ($role === RegisterableRoleEnum::MERCHANT) {
+                    $user->merchantDetail()->create();
+                }
+                return $user;
+            }
+        });
+
+        if (!$user) {
             return response()->json([
                 'message' => 'User registration failed'
             ], Response::HTTP_BAD_REQUEST);
         }
+        return $this->respondWithToken($user);
     }
 
     /**

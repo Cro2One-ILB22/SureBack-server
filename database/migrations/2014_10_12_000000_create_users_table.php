@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->text('profile_picture')->nullable();
             $table->unsignedBigInteger('instagram_id')->unique();
             $table->string('instagram_username')->unique();
             $table->bigInteger('balance')->default(0);

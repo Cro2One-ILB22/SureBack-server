@@ -7,6 +7,7 @@ use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Throwable;
 
 class InstagramService
 {
@@ -57,9 +58,25 @@ class InstagramService
     return $response->json();
   }
 
+  function setUserInstagramProperty($profileInfo)
+  {
+    try {
+      $user = User::where('instagram_id', $profileInfo['id'])->first();
+      if ($user) {
+        $user->profile_picture = $profileInfo['profile_pic_url_hd'];
+        $user->instagram_username = $profileInfo['username'];
+        $user->save();
+      }
+    } catch (Throwable $e) {
+      info($e);
+    }
+  }
+
   function getProfile($username)
   {
     $profileInfo =  $this->getProfileInfo($username);
+    $this->setUserInstagramProperty($profileInfo);
+
     return [
       'id' => $profileInfo['id'],
       'username' => $profileInfo['username'],
@@ -95,9 +112,7 @@ class InstagramService
     $id = $userInfo['pk'];
     $username = $userInfo['username'];
 
-    User::where('instagram_id', $id)->update([
-      'instagram_username' => $username,
-    ]);
+    $this->setUserInstagramProperty($userInfo);
 
     return [
       'id' => $id,
