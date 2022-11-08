@@ -19,8 +19,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('customer_id');
             $table->foreignId('story_token_id');
-            $table->string('instagram_story_id')->nullable()->unique();
-            $table->string('instagram_id');
+            $table->unsignedBigInteger('instagram_story_id')->nullable()->unique();
+            $table->unsignedBigInteger('instagram_id');
             $table->text('image_uri')->nullable();
             $table->text('video_uri')->nullable();
             $table->enum('instagram_story_status', InstagramStoryStatusEnum::values())->nullable();

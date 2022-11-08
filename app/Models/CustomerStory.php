@@ -30,7 +30,8 @@ class CustomerStory extends Model
     ];
 
     protected $casts = [
-        'instagram_id' => 'string',
+        'instagram_story_id' => 'integer',
+        'instagram_id' => 'integer',
         'image_uri' => 'string',
         'approval_status' => StoryApprovalStatusEnum::class,
         'instagram_story_status' => InstagramStoryStatusEnum::class,

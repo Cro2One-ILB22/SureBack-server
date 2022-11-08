@@ -20,7 +20,7 @@ class FinancialTransaction extends Model
     ];
 
     protected $casts = [
-        'amount' => 'float',
+        'amount' => 'integer',
         'type' => TransactionTypeEnum::class,
     ];
 

@@ -18,9 +18,9 @@ class CorporateLedger extends Model
     ];
 
     protected $casts = [
-        'amount' => 'float',
-        'balance_before' => 'float',
-        'balance_after' => 'float',
+        'amount' => 'integer',
+        'balance_before' => 'integer',
+        'balance_after' => 'integer',
         'type' => TransactionTypeEnum::class,
     ];
 

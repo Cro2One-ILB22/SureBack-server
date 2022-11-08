@@ -38,6 +38,16 @@ class User extends Authenticatable
         'story_tokens'
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'balance' => 'integer',
+        'coins' => 'integer',
+    ];
+
     protected function password(): Attribute
     {
         return new Attribute(

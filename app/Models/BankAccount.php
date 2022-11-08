@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class BankAccount extends Model
 {
     use HasFactory;
+    
+    protected $casts = [
+        'account_number' => 'integer',
+    ];
 
     public function user()
     {

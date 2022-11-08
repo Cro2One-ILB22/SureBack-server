@@ -170,11 +170,13 @@ class StoryService
     return [
       'results' => [...array_map(function ($story) use ($storiesResponse, $submittedStories) {
         $submittedAt = in_array($story['pk'], array_column($submittedStories, 'instagram_story_id')) ? array_filter($submittedStories, function ($submittedStory) use ($story) {
-          return $submittedStory['instagram_story_id'] === $story['pk'];
+          return $submittedStory['instagram_story_id'] == $story['pk'];
         })[0]['submitted_at'] : null;
 
+        $id = $story['pk'];
+
         return [
-          'id' => $story['pk'],
+          'id' => is_numeric($id) ? (int) $id : $id,
           'taken_at' => $story['taken_at'],
           'expiring_at' => $story['expiring_at'],
           'media_type' => $story['media_type'],

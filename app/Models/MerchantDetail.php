@@ -38,8 +38,8 @@ class MerchantDetail extends Model
         'cashback_limit' => 'integer',
         'daily_token_limit' => 'integer',
         'is_active_generating_token' => 'boolean',
-        'outstanding_coin' => 'integer',
-        'exchanged_coin' => 'integer',
+        'outstanding_coins' => 'integer',
+        'exchanged_coins' => 'integer',
     ];
 
     public function todaysTokenCount(): Attribute

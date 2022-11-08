@@ -24,6 +24,13 @@ class StoryToken extends Model
         'merchant_id'
     ];
 
+    protected $casts = [
+        'purchase_amount' => 'integer',
+        'cashback_amount' => 'integer',
+        'cashback_percent' => 'float',
+        'instagram_id' => 'integer',
+    ];
+
     protected function token(): Attribute
     {
         return new Attribute(

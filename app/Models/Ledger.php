@@ -20,8 +20,8 @@ class Ledger extends Model
     ];
 
     protected $casts = [
-        'before' => 'float',
-        'after' => 'float',
+        'before' => 'integer',
+        'after' => 'integer',
         'instrument' => PaymentInstrumentEnum::class,
     ];
 
@@ -33,5 +33,10 @@ class Ledger extends Model
     public function transaction()
     {
         return $this->belongsTo(FinancialTransaction::class, 'financial_transaction_id');
+    }
+
+    public function instrument()
+    {
+        return $this->belongsTo(PaymentInstrument::class, 'payment_instrument_id');
     }
 }
