@@ -3,10 +3,21 @@
 namespace App\Services;
 
 use App\Enums\InstagramStoryStatusEnum;
+use App\Enums\PaymentInstrumentEnum;
 use App\Enums\StoryApprovalStatusEnum;
+use App\Enums\TransactionCategoryEnum;
+use App\Enums\TransactionStatusEnum;
+use App\Jobs\ValidateStory;
+use App\Models\Cashback;
 use App\Models\CustomerStory;
+use App\Models\FinancialTransaction;
+use App\Models\Ledger;
+use App\Models\PaymentInstrument;
 use App\Models\StoryToken;
+use App\Models\TransactionCategory;
+use App\Models\TransactionStatus;
 use App\Models\User;
+use App\Models\UserCoin;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
@@ -159,7 +170,7 @@ class StoryService
         return false;
       }
       $mentionedStories = array_filter($story[$stickerContainerKey], function ($sticker) use ($stickerKey) {
-        return $sticker[$stickerKey]['app_id'] === 'com.bloks.www.sticker.ig.mention.screen';
+        return $sticker[$stickerKey]['app_id'] === 'com.bloks.www.sticker.ig.mention.screen' || $sticker[$stickerKey]['bloks_sticker_type'] === 'mention';
       });
       return array_filter($mentionedStories, function ($sticker) use ($mentioned, $stickerKey) {
         return $sticker[$stickerKey]['sticker_data']['ig_mention']['account_id'] == $mentioned;
@@ -228,6 +239,9 @@ class StoryService
       'submitted_at' => now(),
     ]);
 
+    ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id])
+      ->delay(now()->addSeconds($mentionedStory['expiring_at'] - now()->addMinutes(3)->timestamp));
+
     return $story;
   }
 
@@ -263,7 +277,115 @@ class StoryService
     $story->note = $storyRequest['note'] ?? null;
     $story->save();
 
+    if ($story->instagram_story_status === InstagramStoryStatusEnum::VALIDATED && !$story->cashback()->exists()) {
+      $this->sendCashback($story);
+      ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id]);
+    }
+
     return $story;
+  }
+
+  function getOnAirCustomerStory($instagramStoryId, $withExpiringAt = false)
+  {
+    $story = CustomerStory::where('instagram_story_id', $instagramStoryId)->first();
+    if (!$story) {
+      return null;
+    }
+
+    $instagramId = $story->instagram_id;
+    $stories = $this->getStories($instagramId);
+    $stories = array_filter($stories, function ($story) use ($instagramStoryId) {
+      return $story['pk'] == $instagramStoryId;
+    });
+
+    $instagramStory = array_shift($stories);
+
+    if ($instagramStory) {
+      if ($withExpiringAt) {
+        $story->expiring_at = $instagramStory['expiring_at'];
+      }
+      return $story;
+    }
+  }
+
+  function validateStory($instagramStoryId)
+  {
+    $story = $this->getOnAirCustomerStory($instagramStoryId, true);
+    info('validateStory', [$story]);
+    if ($story) {
+      if ($story->expiring_at < now()->addMinutes(3)->timestamp) {
+        $story->instagram_story_status = InstagramStoryStatusEnum::VALIDATED;
+        unset($story->expiring_at);
+        $story->save();
+      } else {
+        ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id])
+          ->delay(now()->addSeconds($story->expiring_at - now()->addMinutes(3)->timestamp));
+      }
+
+      return [
+        'success' => true,
+        'story' => $story,
+      ];
+    }
+
+    $story = CustomerStory::where('instagram_story_id', $instagramStoryId)->first();
+    $story->update([
+      'instagram_story_status' => InstagramStoryStatusEnum::DELETED,
+    ]);
+
+    return [
+      'success' => false,
+      'story' => $story,
+    ];
+  }
+
+  function sendCashback($story)
+  {
+    $user = $story->customer;
+    $merchant = $story->token->merchant;
+    $cashbackAmount = $story->token->cashback_amount;
+    DB::transaction(function () use ($merchant, $user, $story, $cashbackAmount) {
+      $customerCoins = $user->coins;
+      $customerCoinsAfter = $customerCoins + $cashbackAmount;
+      $customerTransactionCategory = TransactionCategory::where('slug', TransactionCategoryEnum::CASHBACK)->first();
+      $customerTransactionStatus = TransactionStatus::where('name', TransactionStatusEnum::SUCCESS)->first();
+      $customerTransaction = new FinancialTransaction([
+        'amount' => $cashbackAmount,
+        'type' => 'C',
+      ]);
+      $customerTransaction->category()->associate($customerTransactionCategory);
+      $customerTransaction->status()->associate($customerTransactionStatus);
+      $customerTransaction->user()->associate($user);
+      $customerTransaction->save();
+
+      $paymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first();
+
+      $customerLedger = new Ledger([
+        'before' => $customerCoins,
+        'after' => $customerCoinsAfter,
+      ]);
+      $customerLedger->transaction()->associate($customerTransaction);
+      $customerLedger->instrument()->associate($paymentInstrument);
+      $customerLedger->save();
+
+      $cashback = new Cashback();
+      $cashback->story()->associate($story);
+      $cashback->transaction()->associate($customerTransaction);
+      $cashback->save();
+
+      $user->coins = $customerCoinsAfter;
+      $user->save();
+
+      $merchant->merchantDetail->outstanding_coins += $cashbackAmount;
+      $merchant->save();
+
+      $userCoin = new UserCoin();
+      $userCoin->customer()->associate($user);
+      $userCoin->merchant()->associate($merchant);
+      $userCoin->all_time += $cashbackAmount;
+      $userCoin->outstanding += $cashbackAmount;
+      $userCoin->save();
+    });
   }
 
   private function getMentionedStory(CustomerStory $customerStory, $instagramStoryId)

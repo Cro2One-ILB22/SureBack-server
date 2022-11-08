@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Jobs\Config;
 use App\Jobs\TestJob;
+use App\Jobs\ValidateStory;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -34,6 +35,7 @@ class EventServiceProvider extends ServiceProvider
 
         // $this->app->bind(Config::class.'@handle', fn($job) => $job->handle());
         $this->app->bind(TestJob::class.'@handle', fn($job) => $job->handle());
+        $this->app->bind(ValidateStory::class.'@handle', fn($job) => $job->handle());
     }
 
     /**
