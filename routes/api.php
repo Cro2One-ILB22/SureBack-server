@@ -51,6 +51,7 @@ Route::group([
     'prefix' => 'merchant'
 ], function ($router) {
     Route::get('', [UserController::class, 'merchant']);
+    Route::get('token', [InstagramController::class, 'merchantToken']);
 });
 
 Route::group([
@@ -58,6 +59,7 @@ Route::group([
     'prefix' => 'customer'
 ], function ($router) {
     Route::get('', [UserController::class, 'customer']);
+    Route::get('token', [InstagramController::class, 'customerToken']);
 });
 
 Route::group([

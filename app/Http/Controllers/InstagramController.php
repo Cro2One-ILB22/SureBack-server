@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ApproveCustomerStoryRequest;
 use App\Models\CustomerStory;
+use App\Models\StoryToken;
 use App\Models\User;
 use App\Services\InstagramService;
 use App\Services\StoryService;
@@ -136,5 +137,25 @@ class InstagramController extends Controller
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
+    }
+
+    public function merchantToken()
+    {
+        $user = auth()->user();
+        $tokens = StoryToken::where('merchant_id', $user->id)->with('story')->get();
+        return response()->json([
+            'result' => $tokens,
+        ]);
+    }
+
+    public function customerToken()
+    {
+        $user = auth()->user();
+        $tokens = StoryToken::whereHas('story', function ($query) use ($user) {
+            $query->where('customer_id', $user->id);
+        })->with('story')->get();
+        return response()->json([
+            'result' => $tokens,
+        ]);
     }
 }
