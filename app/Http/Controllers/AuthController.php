@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Str;
 use App\Enums\RegisterableRoleEnum;
 use App\Enums\RoleEnum;
+use App\Http\Requests\StoreUserDeviceRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\DeviceService;
 use App\Services\InstagramService;
 use App\Services\OTPService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class AuthController extends Controller
@@ -69,15 +73,11 @@ class AuthController extends Controller
 
             $user->roles()->attach(Role::where('slug', RoleEnum::USER)->first());
             $user->roles()->attach(Role::where('slug', $role)->first());
-            $this->instagramService->getProfile($user->instagram_username);
+
+            $instagramService = new InstagramService();
+            $instagramService->getProfile($user->instagram_username);
 
             if ($user) {
-        if ($user) {
-            if ($role === RegisterableRoleEnum::MERCHANT) {
-                $user->merchantDetail()->create();
-            }
-            return $this->respondWithToken($user);
-        } else {
                 if ($role === RegisterableRoleEnum::MERCHANT) {
                     $user->merchantDetail()->create();
                 }
@@ -133,7 +133,26 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        auth()->user()->currentAccessToken()->delete();
+        $user = auth()->user();
+        $headers = $this->getDeviceHeaders();
+        $rules = (new StoreUserDeviceRequest())->rules();
+        $deviceIdentifierKey = 'identifier';
+        $deviceIdRule = $rules[$deviceIdentifierKey];
+
+        $validator = Validator::make($headers, [
+            $deviceIdentifierKey => $deviceIdRule
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()], Response::HTTP_BAD_REQUEST);
+        }
+
+        $deviceService = new DeviceService();
+        $deviceService->removeFromDevice($user, $validator->validated()['identifier']);
+
+        $user->currentAccessToken()->delete();
+        $deviceService = new DeviceService();
+        $deviceService->removeFromDevice($user, $validator->validated());
 
         return response()->json(['message' => 'Successfully logged out']);
     }
@@ -157,6 +176,17 @@ class AuthController extends Controller
      */
     protected function respondWithToken(User $user)
     {
+        $headers = $this->getDeviceHeaders();
+        $rules = (new StoreUserDeviceRequest())->rules();
+        $validator = Validator::make($headers, $rules);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()], Response::HTTP_BAD_REQUEST);
+        }
+
+        $deviceService = new DeviceService();
+        $deviceService->addDevice($user, $validator->validated());
+
         $roles = $user->roles->pluck('slug')->all();
         $expires_at = now()->addMinutes(config('sanctum.expiration'));
         $token = $user->createToken($user->id, $roles, $expires_at);
@@ -167,5 +197,13 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
         ]);
+    }
+
+    private function getDeviceHeaders()
+    {
+        $headers = getallheaders();
+        return array_combine(array_map(function ($key) {
+            return strtolower(str_replace(['x-device-', '-'], ['', '_'], strtolower($key)));
+        }, array_keys($headers)), array_values($headers));
     }
 }

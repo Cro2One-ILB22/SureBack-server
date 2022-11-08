@@ -15,11 +15,11 @@ return new class extends Migration
     {
         Schema::create('user_devices', function (Blueprint $table) {
             $table->id();
-            $table->string('device_id')->nullable()->unique();
-            $table->string('device_model')->nullable();
-            $table->string('device_os')->nullable();
-            $table->string('device_os_version')->nullable();
-            $table->string('device_name')->nullable();
+            $table->string('identifier')->nullable()->unique();
+            $table->string('name')->nullable();
+            $table->string('os')->nullable();
+            $table->string('os_version')->nullable();
+            $table->string('model')->nullable();
             $table->string('notification_token')->unique();
             $table->timestamps();
         });
