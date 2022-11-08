@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Google\Auth\ApplicationDefaultCredentials;
 use GuzzleHttp\Client;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class SendPushNotification extends Command
 {
@@ -91,9 +92,13 @@ class SendPushNotification extends Command
             $reqBody['message']['condition'] = $condition;
         } else {
             foreach ($registrationTokens as $registrationToken) {
-                $reqBody['message']['token'] = $registrationToken;
+                try {
+                    $reqBody['message']['token'] = $registrationToken;
 
-                $this->sendNotification($firebaseProjectId, $accessToken, $reqBody);
+                    $this->sendNotification($firebaseProjectId, $accessToken, $reqBody);
+                } catch (\Exception $e) {
+                    Log::error($e->getMessage());
+                }
             }
             return Command::SUCCESS;
         }

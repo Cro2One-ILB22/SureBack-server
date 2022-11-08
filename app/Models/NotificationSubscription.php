@@ -9,6 +9,11 @@ class NotificationSubscription extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'slug',
+        'name',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -16,7 +21,7 @@ class NotificationSubscription extends Model
 
     public function notification()
     {
-        return $this->belongsTo(UserNotification::class);
+        return $this->hasOne(UserNotification::class);
     }
 
     public function topic()

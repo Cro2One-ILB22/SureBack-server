@@ -16,6 +16,10 @@ return new class extends Migration
         Schema::create('user_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('notification_subscription_id');
+            $table->foreignId('image_id')->nullable();
+            $table->string('title');
+            $table->string('body');
+            $table->longText('data')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamps();
         });

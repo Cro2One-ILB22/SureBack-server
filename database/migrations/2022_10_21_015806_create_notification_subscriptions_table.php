@@ -18,8 +18,9 @@ return new class extends Migration
             $table->foreignId('user_id');
             $table->foreignId('notification_topic_id')->nullable();
             $table->foreignId('notification_group_id')->nullable();
+            $table->string('slug');
             $table->string('name');
-            $table->boolean('active')->default(false);
+            $table->boolean('active')->default(true);
             $table->timestamps();
         });
     }

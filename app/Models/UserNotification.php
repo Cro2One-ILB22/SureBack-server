@@ -8,4 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 class UserNotification extends Model
 {
     use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'title',
+        'body',
+        'data',
+    ];
+
+    public function notificationSubscription()
+    {
+        return $this->belongsTo(NotificationSubscription::class);
+    }
 }

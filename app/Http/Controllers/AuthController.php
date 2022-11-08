@@ -78,6 +78,7 @@ class AuthController extends Controller
             $instagramService->getProfile($user->instagram_username);
 
             if ($user) {
+                $this->registerForNotification($user);
                 if ($role === RegisterableRoleEnum::MERCHANT) {
                     $user->merchantDetail()->create();
                 }
@@ -196,6 +197,16 @@ class AuthController extends Controller
             'access_token' => $token->plainTextToken,
             'token_type' => 'bearer',
             'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
+        ]);
+    }
+
+    private function registerForNotification($user)
+    {
+        $user->notificationSubscriptions()->firstOrCreate([
+            'user_id' => $user->id,
+            'slug' => 'general',
+        ], [
+            'name' => 'General',
         ]);
     }
 

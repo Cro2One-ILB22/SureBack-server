@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\StoryApprovalStatusEnum;
+use App\Services\NotificationService;
 use App\Services\StoryService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -10,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class ValidateStory implements ShouldQueue
 {
@@ -37,16 +39,27 @@ class ValidateStory implements ShouldQueue
         $story = $this->data;
         $storyService = new StoryService();
         $validated = $storyService->validateStory($story['instagram_story_id']);
+        $notificationService = new NotificationService();
+        $story = $validated['story'];
+        $generalNotificationSubscription = $story->customer->notificationSubscriptions()->where('slug', 'general')->first();
         if ($validated['success']) {
-            $story = $validated['story'];
+            info('Story validated successfully');
             if ($story['approval_status'] === StoryApprovalStatusEnum::APPROVED && !$story->cashback()->exists()) {
                 $storyService->sendCashback($story);
-                // send notification
+                $notificationService->sendAndSaveNotification(
+                    'Cashback Approved',
+                    'You have received a cashback of ' . $story->token->cashback_amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
+                    $generalNotificationSubscription,
+                );
             }
         } else {
-            $story = $validated['story'];
+            info('Story validation failed');
             if ($story['approval_status'] === StoryApprovalStatusEnum::REJECTED) {
-                // send notification
+                $notificationService->sendAndSaveNotification(
+                    'Cashback Rejected',
+                    'Your cashback of ' . $story->token->cashback_amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected',
+                    $generalNotificationSubscription,
+                );
             }
         }
     }
