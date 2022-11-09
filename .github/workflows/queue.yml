@@ -11,6 +11,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Create .env file
+        run: |
+          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
+          echo "DB_CONNECTION=${{ secrets.DB_CONNECTION }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "MYSQL_ATTR_SSL_CA=${{ secrets.MYSQL_ATTR_SSL_CA }}" >> .env
+          echo "APP_URL=${{ secrets.APP_URL }}" >> .env
+          echo "ASSET_URL=${{ secrets.ASSET_URL }}" >> .env
+          echo "SESSION_DRIVER=${{ secrets.SESSION_DRIVER }}" >> .env
+          echo "QUEUE_CONNECTION=${{ secrets.QUEUE_CONNECTION }}" >> .env
+          echo "MAIL_MAILER=${{ secrets.MAIL_MAILER }}" >> .env
+          echo "MAIL_HOST=${{ secrets.MAIL_HOST }}" >> .env
+          echo "MAIL_PORT=${{ secrets.MAIL_PORT }}" >> .env
+          echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
+          echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
+          echo "MAIL_ENCRYPTION=${{ secrets.MAIL_ENCRYPTION }}" >> .env
+          echo "MAIL_FROM_ADDRESS=${{ secrets.MAIL_FROM_ADDRESS }}" >> .env
+          echo "MAIL_FROM_NAME=${{ secrets.MAIL_FROM_NAME }}" >> .env
+          echo "PUSHER_APP_ID=${{ secrets.PUSHER_APP_ID }}" >> .env
+          echo "PUSHER_APP_KEY=${{ secrets.PUSHER_APP_KEY }}" >> .env
+          echo "PUSHER_APP_SECRET=${{ secrets.PUSHER_APP_SECRET }}" >> .env
+          echo "PUSHER_APP_CLUSTER=${{ secrets.PUSHER_APP_CLUSTER }}" >> .env
+          echo "RABBITMQ_HOST=${{ secrets.RABBITMQ_HOST }}" >> .env
+          echo "RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}" >> .env
+          echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
+          echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> .env
+          echo "RABBITMQ_VHOST=${{ secrets.RABBITMQ_VHOST }}" >> .env
+          echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env
+          echo "FIREBASE_SERVER_KEY=${{ secrets.FIREBASE_SERVER_KEY }}" >> .env
+          echo "FIREBASE_SENDER_ID=${{ secrets.FIREBASE_SENDER_ID }}" >> .env
+          echo "INSTAGRAM_BASE_URL=${{ secrets.INSTAGRAM_BASE_URL }}" >> .env
+          echo "INSTAGRAM_X_IG_APP_ID=${{ secrets.INSTAGRAM_X_IG_APP_ID }}" >> .env
+          echo "INSTAGRAM_SESSION_ID=${{ secrets.INSTAGRAM_SESSION_ID }}" >> .env
+          echo "INSTAGRAM_HOST=${{ secrets.INSTAGRAM_HOST }}" >> .env
+          echo "INSTAGRAM_USER_AGENT=${{ secrets.INSTAGRAM_USER_AGENT }}" >> .env
+          echo "INSTAGRAM_REFERER=${{ secrets.INSTAGRAM_REFERER }}" >> .env
+          echo "INSTAGRAM_ORIGIN=${{ secrets.INSTAGRAM_ORIGIN }}" >> .env
+          echo "CODE_CIPHERING=${{ secrets.CODE_CIPHERING }}" >> .env
+          echo "CODE_DIGEST=${{ secrets.CODE_DIGEST }}" >> .env
+          echo "CODE_ENCRYPTION_IV=${{ secrets.CODE_ENCRYPTION_IV }}" >> .env
+      - name: Send .env file
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.QUEUE_HOST }}
+          username: ${{ secrets.QUEUE_USERNAME }}
+          password: ${{ secrets.QUEUE_PASSWORD }}
+          source: ".env"
+          target: "${{ secrets.QUEUE_PATH }}"
       - name: SSH
         uses: "appleboy/ssh-action@master"
         with:
