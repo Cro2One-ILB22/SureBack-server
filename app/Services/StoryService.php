@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CashbackTypeEnum;
 use App\Enums\InstagramStoryStatusEnum;
 use App\Enums\PaymentInstrumentEnum;
 use App\Enums\StoryApprovalStatusEnum;
@@ -14,6 +15,7 @@ use App\Models\FinancialTransaction;
 use App\Models\Ledger;
 use App\Models\PaymentInstrument;
 use App\Models\StoryToken;
+use App\Models\TokenCashback;
 use App\Models\TransactionCategory;
 use App\Models\TransactionStatus;
 use App\Models\User;
@@ -102,13 +104,19 @@ class StoryService
       $storyToken = new StoryToken([
         'token' => $token,
         'purchase_amount' => $purchaseAmount,
-        'cashback_amount' => $cashbackAmount,
-        'cashback_percent' => $cashbackPercent,
         'instagram_id' => $instagramId,
         'expires_at' => now()->addHours(18),
       ]);
       $storyToken->merchant()->associate($user);
       $storyToken->save();
+
+      $tokenCashback = new TokenCashback([
+        'amount' => $cashbackAmount,
+        'percent' => $cashbackPercent,
+        'type' => CashbackTypeEnum::LOCAL,
+      ]);
+      $tokenCashback->token()->associate($storyToken);
+      $tokenCashback->save();
       // $storyToken->transactions()->attach($transaction);
       return [
         'token' => $token,
@@ -136,6 +144,23 @@ class StoryService
     $story->token()->associate($storyToken);
     $story->customer()->associate($customer);
     $story->save();
+
+    $customerTransactionCategory = TransactionCategory::where('slug', TransactionCategoryEnum::CASHBACK)->first();
+    $customerTransactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::CREATED)->first();
+    $customerTransaction = new FinancialTransaction([
+      'amount' => $story->token->cashback->amount,
+      'type' => 'C',
+    ]);
+    $customerTransaction->category()->associate($customerTransactionCategory);
+    $customerTransaction->status()->associate($customerTransactionStatus);
+    $customerTransaction->user()->associate($customer);
+    $customerTransaction->save();
+
+    $cashback = new Cashback();
+    $cashback->story()->associate($story);
+    $cashback->transaction()->associate($customerTransaction);
+    $cashback->save();
+
     return $storyToken->load('merchant', 'story');
   }
 
@@ -343,35 +368,25 @@ class StoryService
   {
     $user = $story->customer;
     $merchant = $story->token->merchant;
-    $cashbackAmount = $story->token->cashback_amount;
+    $cashbackAmount = $story->token->cashback->amount;
     DB::transaction(function () use ($merchant, $user, $story, $cashbackAmount) {
       $customerCoins = $user->coins;
       $customerCoinsAfter = $customerCoins + $cashbackAmount;
-      $customerTransactionCategory = TransactionCategory::where('slug', TransactionCategoryEnum::CASHBACK)->first();
-      $customerTransactionStatus = TransactionStatus::where('name', TransactionStatusEnum::SUCCESS)->first();
-      $customerTransaction = new FinancialTransaction([
-        'amount' => $cashbackAmount,
-        'type' => 'C',
-      ]);
-      $customerTransaction->category()->associate($customerTransactionCategory);
-      $customerTransaction->status()->associate($customerTransactionStatus);
-      $customerTransaction->user()->associate($user);
-      $customerTransaction->save();
 
+      $customerTransactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::SUCCESS)->first();
       $paymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first();
+
+      $transaction = $story->cashback->transaction;
+      $transaction->status()->associate($customerTransactionStatus);
+      $transaction->save();
 
       $customerLedger = new Ledger([
         'before' => $customerCoins,
         'after' => $customerCoinsAfter,
       ]);
-      $customerLedger->transaction()->associate($customerTransaction);
+      $customerLedger->transaction()->associate($transaction);
       $customerLedger->instrument()->associate($paymentInstrument);
       $customerLedger->save();
-
-      $cashback = new Cashback();
-      $cashback->story()->associate($story);
-      $cashback->transaction()->associate($customerTransaction);
-      $cashback->save();
 
       $user->coins = $customerCoinsAfter;
       $user->save();

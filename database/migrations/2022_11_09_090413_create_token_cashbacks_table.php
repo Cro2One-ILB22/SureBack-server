@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CashbackTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,13 +14,12 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('story_tokens', function (Blueprint $table) {
+        Schema::create('token_cashbacks', function (Blueprint $table) {
             $table->id();
-            $table->string('token')->unique();
-            $table->unsignedBigInteger('instagram_id');
-            $table->bigInteger('purchase_amount');
-            $table->foreignId('merchant_id');
-            $table->timestamp('expires_at');
+            $table->foreignId('token_id')->constrained('story_tokens')->cascadeOnDelete();
+            $table->bigInteger('amount');
+            $table->float('percent')->nullable();
+            $table->enum('type', CashbackTypeEnum::values());
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('story_tokens');
+        Schema::dropIfExists('token_cashbacks');
     }
 };

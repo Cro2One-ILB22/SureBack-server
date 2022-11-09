@@ -14,8 +14,6 @@ class StoryToken extends Model
     protected $fillable = [
         'token',
         'purchase_amount',
-        'cashback_amount',
-        'cashback_percent',
         'instagram_id',
         'expires_at',
     ];
@@ -26,8 +24,6 @@ class StoryToken extends Model
 
     protected $casts = [
         'purchase_amount' => 'integer',
-        'cashback_amount' => 'integer',
-        'cashback_percent' => 'float',
         'instagram_id' => 'integer',
     ];
 
@@ -52,5 +48,10 @@ class StoryToken extends Model
     public function transactions()
     {
         return $this->belongsToMany(FinancialTransaction::class, 'story_transactions');
+    }
+
+    public function cashback()
+    {
+        return $this->hasOne(TokenCashback::class, 'token_id');
     }
 }

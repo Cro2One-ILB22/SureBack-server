@@ -13,6 +13,7 @@ class CustomerStory extends Model
     use HasFactory;
 
     protected $fillable = [
+        'instagram_story_id',
         'instagram_id',
         'image_uri',
         'approval_status',
