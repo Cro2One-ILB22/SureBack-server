@@ -98,7 +98,8 @@ class InstagramController extends Controller
         }
 
         try {
-            return response()->json($this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id));
+            $stories = $this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id);
+            return response()->json(['results' => $stories]);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }

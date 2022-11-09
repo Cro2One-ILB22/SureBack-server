@@ -201,29 +201,31 @@ class StoryService
         return $sticker[$stickerKey]['sticker_data']['ig_mention']['account_id'] == $mentioned;
       });
     });
-
     $submittedStories = $this->getLast24HoursSubmittedStoriesByMentionedUserId($uploader, $mentioned);
-    return [
-      'results' => [...array_map(function ($story) use ($storiesResponse, $submittedStories) {
-        $submittedAt = in_array($story['pk'], array_column($submittedStories, 'instagram_story_id')) ? array_filter($submittedStories, function ($submittedStory) use ($story) {
-          return $submittedStory['instagram_story_id'] == $story['pk'];
-        })[0]['submitted_at'] : null;
 
-        $id = $story['pk'];
+    return [...array_map(function ($story) use ($storiesResponse, $submittedStories) {
+      $id = $story['pk'];
+      $submittedInstagramStories = array_filter($submittedStories, fn ($submittedStory) => $submittedStory['instagram_story_id'] == $id);
+      $submittedInstagramStory = reset($submittedInstagramStories);
 
-        return [
-          'id' => is_numeric($id) ? (int) $id : $id,
-          'taken_at' => $story['taken_at'],
-          'expiring_at' => $story['expiring_at'],
-          'media_type' => $story['media_type'],
-          'image_url' => $story['image_versions2']['candidates'][0]['url'],
-          'video_url' => $story['media_type'] === 2 ? $story['video_versions'][0]['url'] : null,
-          'music_metadata' => $story['music_metadata'],
-          'story_url' => "https://www.instagram.com/stories/{$storiesResponse['user']['username']}/{$story['pk']}/",
-          'submitted_at' => $submittedAt,
-        ];
-      }, $mentionedStories)]
-    ];
+      $submittedAt = null;
+      if ($submittedInstagramStory && array_key_exists('submitted_at', $submittedInstagramStory)) {
+        $submittedAt = $submittedInstagramStory['submitted_at'];
+      }
+      $submittedAt = in_array($id, array_column($submittedStories, 'instagram_story_id')) ? $submittedAt : null;
+
+      return [
+        'id' => is_numeric($id) ? (int) $id : $id,
+        'taken_at' => $story['taken_at'],
+        'expiring_at' => $story['expiring_at'],
+        'media_type' => $story['media_type'],
+        'image_url' => $story['image_versions2']['candidates'][0]['url'],
+        'video_url' => $story['media_type'] === 2 ? $story['video_versions'][0]['url'] : null,
+        'music_metadata' => $story['music_metadata'],
+        'story_url' => "https://www.instagram.com/stories/{$storiesResponse['user']['username']}/{$story['pk']}/",
+        'submitted_at' => $submittedAt,
+      ];
+    }, $mentionedStories)];
   }
 
   function getStories($instagramId, bool $withUserInfo = false)
