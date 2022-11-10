@@ -9,8 +9,14 @@ class NotificationTopic extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+    ];
+
     public function subscriptions()
     {
-        return $this->hasMany(NotificationSubscription::class);
+        return $this->morphMany(NotificationSubscription::class, 'notification_subscriptionable');
     }
 }

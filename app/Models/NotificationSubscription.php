@@ -24,14 +24,9 @@ class NotificationSubscription extends Model
         return $this->hasOne(UserNotification::class);
     }
 
-    public function topic()
+    public function notificationSubscriptionable()
     {
-        return $this->belongsTo(NotificationTopic::class);
-    }
-
-    public function group()
-    {
-        return $this->belongsTo(NotificationGroup::class);
+        return $this->morphTo();
     }
 
     public function scopeForUser($query, $user)

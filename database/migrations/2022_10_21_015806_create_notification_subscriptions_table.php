@@ -16,8 +16,7 @@ return new class extends Migration
         Schema::create('notification_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id');
-            $table->foreignId('notification_topic_id')->nullable();
-            $table->foreignId('notification_group_id')->nullable();
+            $table->nullableMorphs('notification_subscriptionable', 'notification_subscriptionable_index');
             $table->string('slug');
             $table->string('name');
             $table->boolean('active')->default(true);
