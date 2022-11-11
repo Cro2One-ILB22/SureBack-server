@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\CashbackTypeEnum;
+use App\Enums\CoinTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('token_id')->constrained('story_tokens')->cascadeOnDelete();
             $table->bigInteger('amount');
             $table->float('percent')->nullable();
-            $table->enum('type', CashbackTypeEnum::values());
+            $table->enum('type', CoinTypeEnum::values());
             $table->timestamps();
         });
     }

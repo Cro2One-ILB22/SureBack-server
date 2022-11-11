@@ -16,9 +16,10 @@ return new class extends Migration
     {
         Schema::create('financial_transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id');
+            $table->foreignId('user_id')->nullable();
             $table->foreignId('transaction_category_id');
             $table->foreignId('transaction_status_id');
+            $table->foreignId('payment_instrument_id');
             $table->bigInteger('amount');
             $table->string('description')->nullable();
             $table->enum('type', TransactionTypeEnum::values());

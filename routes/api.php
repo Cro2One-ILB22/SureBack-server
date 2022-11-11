@@ -32,6 +32,7 @@ Route::group([
 ], function ($router) {
     Route::get('profile/{username}', [InstagramController::class, 'profile']);
     Route::get('user/{id}', [InstagramController::class, 'user']);
+    Route::post('purchase/qr', [InstagramController::class, 'qrScan'])->middleware('abilities:merchant');
     Route::post('token/generate', [InstagramController::class, 'generateToken'])->middleware('abilities:merchant');
     Route::post('token/redeem', [InstagramController::class, 'redeemToken'])->middleware('abilities:customer');
     Route::get('story', [InstagramController::class, 'story'])->middleware('abilities:customer');

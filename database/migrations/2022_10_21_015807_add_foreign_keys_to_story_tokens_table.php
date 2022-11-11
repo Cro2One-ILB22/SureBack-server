@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('story_tokens', function (Blueprint $table) {
-            $table->foreign('merchant_id')->references(['id'])->on('users')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('purchase_id')->references(['id'])->on('purchases')->restrictOnUpdate()->restrictOnDelete();
         });
     }
 
@@ -26,7 +26,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('story_tokens', function (Blueprint $table) {
-            $table->dropForeign('story_tokens_merchant_id_foreign');
+            $table->dropForeign('story_tokens_purchase_id_foreign');
         });
     }
 };

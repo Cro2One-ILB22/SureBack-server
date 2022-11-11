@@ -20,7 +20,6 @@ return new class extends Migration
             $table->unsignedBigInteger('instagram_id')->unique();
             $table->string('instagram_username')->unique();
             $table->bigInteger('balance')->default(0);
-            $table->bigInteger('coins')->default(0);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

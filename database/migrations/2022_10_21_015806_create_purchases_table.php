@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\CoinTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,14 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('user_coins', function (Blueprint $table) {
+        Schema::create('purchases', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('customer_id')->nullable()->constrained('users')->restrictOnDelete();
             $table->foreignId('merchant_id')->constrained('users')->restrictOnDelete();
-            $table->bigInteger('all_time_reward')->default(0);
-            $table->bigInteger('outstanding')->default(0);
-            $table->bigInteger('exchanged')->default(0);
-            $table->enum('coin_type', CoinTypeEnum::values())->default(CoinTypeEnum::LOCAL->value);
+            $table->foreignId('customer_transaction_id')->constrained('financial_transactions')->restrictOnDelete();
+            $table->foreignId('merchant_transaction_id')->constrained('financial_transactions')->restrictOnDelete();
+            $table->bigInteger('purchase_amount');
+            $table->bigInteger('payment_amount');
             $table->timestamps();
         });
     }
@@ -33,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('user_coins');
+        Schema::dropIfExists('purchases');
     }
 };

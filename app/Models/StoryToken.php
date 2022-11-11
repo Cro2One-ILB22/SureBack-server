@@ -12,22 +12,25 @@ class StoryToken extends Model
     use HasFactory;
 
     protected $fillable = [
-        'token',
-        'purchase_amount',
+        'code',
         'instagram_id',
         'expires_at',
+        'purchase_id',
     ];
 
     protected $hidden = [
-        'merchant_id'
+        'purchase_id',
     ];
 
     protected $casts = [
-        'purchase_amount' => 'integer',
         'instagram_id' => 'integer',
     ];
 
-    protected function token(): Attribute
+    protected $appends = [
+        'merchant',
+    ];
+
+    protected function code(): Attribute
     {
         return new Attribute(
             fn ($value) => CryptoService::decrypt($value),
@@ -35,9 +38,21 @@ class StoryToken extends Model
         );
     }
 
-    public function merchant()
+    public function merchant(): Attribute
     {
-        return $this->belongsTo(User::class, 'merchant_id');
+        return new Attribute(
+            fn () => $this->purchase->merchant,
+        );
+    }
+
+    public function purchase()
+    {
+        return $this->belongsTo(Purchase::class, 'purchase_id');
+    }
+
+    public function transactions()
+    {
+        return $this->belongsToMany(FinancialTransaction::class, 'token_transactions');
     }
 
     public function story()
@@ -45,12 +60,7 @@ class StoryToken extends Model
         return $this->hasOne(CustomerStory::class);
     }
 
-    public function transactions()
-    {
-        return $this->belongsToMany(FinancialTransaction::class, 'story_transactions');
-    }
-
-    public function cashback()
+    public function tokenCashback()
     {
         return $this->hasOne(TokenCashback::class, 'token_id');
     }

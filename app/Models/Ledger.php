@@ -34,9 +34,4 @@ class Ledger extends Model
     {
         return $this->belongsTo(FinancialTransaction::class, 'financial_transaction_id');
     }
-
-    public function instrument()
-    {
-        return $this->belongsTo(PaymentInstrument::class, 'payment_instrument_id');
-    }
 }

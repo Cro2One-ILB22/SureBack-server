@@ -17,6 +17,7 @@ class FinancialTransaction extends Model
         'user_id',
         'transaction_category_id',
         'transaction_status_id',
+        'payment_instrument_id',
         // 'reference',
         // 'reference_type',
         // 'reference_id',
@@ -31,6 +32,7 @@ class FinancialTransaction extends Model
         'user_id',
         'transaction_category_id',
         'transaction_status_id',
+        'payment_instrument_id',
     ];
 
     public function user()
@@ -46,6 +48,11 @@ class FinancialTransaction extends Model
     public function status()
     {
         return $this->belongsTo(TransactionStatus::class, 'transaction_status_id');
+    }
+
+    public function paymentInstrument()
+    {
+        return $this->belongsTo(PaymentInstrument::class);
     }
 
     public function withdrawal()
@@ -71,5 +78,10 @@ class FinancialTransaction extends Model
     public function deposit()
     {
         return $this->hasOne(Deposit::class);
+    }
+
+    public function coinExchange()
+    {
+        return $this->hasOne(CoinExchange::class);
     }
 }

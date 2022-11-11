@@ -6,14 +6,20 @@ use App\Enums\CoinTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class UserCoin extends Model
+class CoinBalance extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'customer_id',
-        'merchant_id',
         'coin_type',
+        'outstanding',
+        'exchanged',
+    ];
+
+    protected $hidden = [
+        'id',
+        'user_id',
+        'created_at',
     ];
 
     protected $casts = [
@@ -23,18 +29,8 @@ class UserCoin extends Model
         'coin_type' => CoinTypeEnum::class,
     ];
 
-    protected $hidden = [
-        'customer_id',
-        'merchant_id',
-    ];
-
-    public function customer()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'customer_id');
-    }
-
-    public function merchant()
-    {
-        return $this->belongsTo(User::class, 'merchant_id');
+        return $this->belongsTo(User::class);
     }
 }

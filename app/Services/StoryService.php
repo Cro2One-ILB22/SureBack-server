@@ -2,32 +2,23 @@
 
 namespace App\Services;
 
-use App\Enums\CashbackTypeEnum;
+use App\Enums\CoinTypeEnum;
 use App\Enums\InstagramStoryStatusEnum;
-use App\Enums\PaymentInstrumentEnum;
 use App\Enums\StoryApprovalStatusEnum;
-use App\Enums\TransactionCategoryEnum;
-use App\Enums\TransactionStatusEnum;
 use App\Jobs\ValidateStory;
-use App\Models\Cashback;
 use App\Models\CustomerStory;
-use App\Models\FinancialTransaction;
-use App\Models\Ledger;
-use App\Models\PaymentInstrument;
+use App\Models\Purchase;
 use App\Models\StoryToken;
 use App\Models\TokenCashback;
-use App\Models\TransactionCategory;
-use App\Models\TransactionStatus;
 use App\Models\User;
-use App\Models\UserCoin;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class StoryService
 {
-  public function generateToken(User $user, int $purchaseAmount)
+  public function generateToken(User $user, Purchase $purchase)
   {
-    $todaysTokenCount = StoryToken::where('merchant_id', $user->id)
+    $todaysTokenCount = StoryToken::where('purchase_id', $purchase)
       ->where('created_at', '>=', now('Asia/Jakarta')->startOfDay())
       ->count();
     $dailyTokenLimit = $user->merchantDetail->daily_token_limit;
@@ -40,95 +31,37 @@ class StoryService
       throw new BadRequestException('You don\'t activate token generation');
     }
 
-    return DB::transaction(function () use ($user, $purchaseAmount) {
+    return DB::transaction(function () use ($user, $purchase) {
+      $purchaseAmount = $purchase->purchase_amount;
       $cashbackPercent = $user->merchantDetail->cashback_percent;
       $cashbackAmount = intval((($cashbackPercent ?? 0) / 100) * $purchaseAmount);
-      // $cashbackLimit = $user->merchantDetail->cashback_limit;
-      // if ($cashbackLimit) {
-      //   $cashbackAmount = min($cashbackAmount, $cashbackLimit);
-      // }
-      // $balance_before = $user->balance;
-      // $points_before = $user->points;
-      // $userPayingPower = $this->payStory($user->balance, $user->points, $cashbackAmount);
-
-      // if (!$userPayingPower) {
-      //   throw new BadRequestException('Insufficient balance');
-      // }
-
-      // $balance_after = $userPayingPower['balance'];
-      // $points_after = $userPayingPower['points'];
-
-      // $transactionCategory = TransactionCategory::where('slug', 'story')->first();
-      // $transactionStatus = TransactionStatus::where('slug', 'success')->first();
-      // $transaction = new FinancialTransaction([
-      //   'amount' => $cashbackAmount,
-      //   'type' => 'D',
-      // ]);
-      // $transaction->user()->associate($user);
-      // $transaction->category()->associate($transactionCategory);
-      // $transaction->status()->associate($transactionStatus);
-      // $transaction->save();
-
-      // $ledger = new Ledger([
-      //   'balance_before' => $balance_before,
-      //   'balance_after' => $balance_after,
-      //   'points_before' => $points_before,
-      //   'points_after' => $points_after,
-      // ]);
-
-      // $ledger->transaction()->associate($transaction);
-      // $ledger->save();
-
-      // $user->balance = $balance_after;
-      // $user->points = $points_after;
-      // $user->save();
-
-      // $corporateBalanceBefore = 0;
-      // $corporateLedger = CorporateLedger::get()->last();
-
-      // if ($corporateLedger) {
-      //   $corporateBalanceBefore = $corporateLedger->balance_after;
-      // }
-
-      // $corporateLedger = new CorporateLedger([
-      //   'amount' => $cashbackAmount,
-      //   'type' => 'C',
-      //   'balance_before' => $corporateBalanceBefore,
-      //   'balance_after' => $corporateBalanceBefore + $cashbackAmount,
-      // ]);
-      // $corporateLedger->financialTransaction()->associate($transaction);
-      // $corporateLedger->save();
-
       $instagramId = $user->instagram_id;
-      $token = $this->generateUniqueToken($instagramId);
+
+      $tokenCode = $this->generateUniqueToken($instagramId);
+
       $storyToken = new StoryToken([
-        'token' => $token,
-        'purchase_amount' => $purchaseAmount,
+        'code' => $tokenCode,
         'instagram_id' => $instagramId,
         'expires_at' => now()->addHours(18),
       ]);
-      $storyToken->merchant()->associate($user);
+      $storyToken->purchase()->associate($purchase);
       $storyToken->save();
 
       $tokenCashback = new TokenCashback([
         'amount' => $cashbackAmount,
         'percent' => $cashbackPercent,
-        'type' => CashbackTypeEnum::LOCAL,
+        'type' => CoinTypeEnum::LOCAL,
       ]);
       $tokenCashback->token()->associate($storyToken);
       $tokenCashback->save();
-      // $storyToken->transactions()->attach($transaction);
-      return [
-        'token' => $token,
-        'cashback_amount' => $cashbackAmount,
-      ];
+      return $storyToken;
     });
   }
 
-  public function redeemToken($token, User $customer)
+  public function redeemToken(string $token, User $customer)
   {
     $encryptedToken = CryptoService::encrypt($token);
-    $storyToken = StoryToken::where('token', $encryptedToken)->first();
+    $storyToken = StoryToken::where('code', $encryptedToken)->first();
     if (!$storyToken) {
       throw new BadRequestException('Invalid token');
     }
@@ -138,30 +71,23 @@ class StoryService
     if ($storyToken->story) {
       throw new BadRequestException('Token already redeemed');
     }
-    $story = new CustomerStory([
-      'instagram_id' => $customer->instagram_id,
-    ]);
-    $story->token()->associate($storyToken);
-    $story->customer()->associate($customer);
-    $story->save();
 
-    $customerTransactionCategory = TransactionCategory::where('slug', TransactionCategoryEnum::CASHBACK)->first();
-    $customerTransactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::CREATED)->first();
-    $customerTransaction = new FinancialTransaction([
-      'amount' => $story->token->cashback->amount,
-      'type' => 'C',
-    ]);
-    $customerTransaction->category()->associate($customerTransactionCategory);
-    $customerTransaction->status()->associate($customerTransactionStatus);
-    $customerTransaction->user()->associate($customer);
-    $customerTransaction->save();
+    $transactionService = new TransactionService();
+    $transactionService->initUserCoin($customer, $storyToken->merchant, CoinTypeEnum::LOCAL);
+    $transactionService->initUserCoin($customer, $storyToken->merchant, CoinTypeEnum::GLOBAL);
 
-    $cashback = new Cashback();
-    $cashback->story()->associate($story);
-    $cashback->transaction()->associate($customerTransaction);
-    $cashback->save();
+    DB::transaction(function () use ($storyToken, $customer, $transactionService) {
+      $story = new CustomerStory([
+        'instagram_id' => $customer->instagram_id,
+      ]);
+      $story->token()->associate($storyToken);
+      $story->customer()->associate($customer);
+      $story->save();
 
-    return $storyToken->load('merchant', 'story');
+      $transactionService->addStoryToToken($story, $storyToken);
+    });
+
+    return $storyToken->load('story', 'purchase');
   }
 
   // private function payStory($balance, $points, $paymentAmount)
@@ -294,7 +220,11 @@ class StoryService
   function approveStory($userId, $storyRequest)
   {
     $story = CustomerStory::where('id', $storyRequest['id'])->whereHas('token', function ($query) use ($userId) {
-      $query->where('merchant_id', $userId);
+      $query->whereHas('purchase', function ($query) use ($userId) {
+        $query->whereHas('merchant', function ($query) use ($userId) {
+          $query->where('id', $userId);
+        });
+      });
     })->first();
     if (!$story) {
       throw new BadRequestException('Story not found');
@@ -365,45 +295,6 @@ class StoryService
     ];
   }
 
-  function sendCashback($story)
-  {
-    $user = $story->customer;
-    $merchant = $story->token->merchant;
-    $cashbackAmount = $story->token->cashback->amount;
-    DB::transaction(function () use ($merchant, $user, $story, $cashbackAmount) {
-      $customerCoins = $user->coins;
-      $customerCoinsAfter = $customerCoins + $cashbackAmount;
-
-      $customerTransactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::SUCCESS)->first();
-      $paymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first();
-
-      $transaction = $story->cashback->transaction;
-      $transaction->status()->associate($customerTransactionStatus);
-      $transaction->save();
-
-      $customerLedger = new Ledger([
-        'before' => $customerCoins,
-        'after' => $customerCoinsAfter,
-      ]);
-      $customerLedger->transaction()->associate($transaction);
-      $customerLedger->instrument()->associate($paymentInstrument);
-      $customerLedger->save();
-
-      $user->coins = $customerCoinsAfter;
-      $user->save();
-
-      $merchant->merchantDetail->outstanding_coins += $cashbackAmount;
-      $merchant->save();
-
-      $userCoin = new UserCoin();
-      $userCoin->customer()->associate($user);
-      $userCoin->merchant()->associate($merchant);
-      $userCoin->all_time += $cashbackAmount;
-      $userCoin->outstanding += $cashbackAmount;
-      $userCoin->save();
-    });
-  }
-
   private function getMentionedStory(CustomerStory $customerStory, $instagramStoryId)
   {
     $stories = $this->getStories($customerStory->instagram_id);
@@ -422,7 +313,7 @@ class StoryService
   private function generateUniqueToken($instagramId)
   {
     $token = hash("crc32", $instagramId . time());
-    if (StoryToken::where('token', CryptoService::encrypt($token))->first()) {
+    if (StoryToken::where('code', CryptoService::encrypt($token))->first()) {
       return $this->generateUniqueToken($instagramId);
     }
     return $token;

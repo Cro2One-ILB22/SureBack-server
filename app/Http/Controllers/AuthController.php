@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Str;
+use App\Enums\CoinTypeEnum;
 use App\Enums\RegisterableRoleEnum;
 use App\Enums\RoleEnum;
 use App\Http\Requests\StoreUserDeviceRequest;
@@ -73,6 +73,11 @@ class AuthController extends Controller
 
             $user->roles()->attach(Role::where('slug', RoleEnum::USER)->first());
             $user->roles()->attach(Role::where('slug', $role)->first());
+            
+            $user->coins()->createMany([
+                ['coin_type' => CoinTypeEnum::LOCAL],
+                ['coin_type' => CoinTypeEnum::GLOBAL],
+            ]);
 
             $instagramService = new InstagramService();
             $instagramService->getProfile($user->instagram_username);
@@ -124,7 +129,7 @@ class AuthController extends Controller
         $roles = $user->roles->pluck('slug');
         unset($user->roles);
         $user->roles = $roles;
-        return response()->json($user);
+        return response()->json($user->load('coins'));
     }
 
     /**

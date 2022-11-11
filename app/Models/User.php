@@ -84,11 +84,6 @@ class User extends Authenticatable
         return $this->hasMany(FinancialTransaction::class);
     }
 
-    public function storyTokens()
-    {
-        return $this->hasMany(StoryToken::class, 'merchant_id');
-    }
-
     public function stories()
     {
         return $this->hasMany(CustomerStory::class, 'customer_id');
@@ -97,5 +92,20 @@ class User extends Authenticatable
     public function merchantDetail()
     {
         return $this->hasOne(MerchantDetail::class);
+    }
+
+    public function coins()
+    {
+        return $this->hasMany(CoinBalance::class);
+    }
+
+    public function purchasesAsCustomer()
+    {
+        return $this->hasMany(Purchase::class, 'customer_id');
+    }
+
+    public function purchasesAsMerchant()
+    {
+        return $this->hasMany(Purchase::class, 'merchant_id');
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\StoryApprovalStatusEnum;
 use App\Enums\TransactionStatusEnum;
 use App\Services\NotificationService;
 use App\Services\StoryService;
+use App\Services\TransactionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,10 +46,11 @@ class ValidateStory implements ShouldQueue
         if ($validated['success']) {
             info('Story validated successfully');
             if ($story['approval_status'] === StoryApprovalStatusEnum::APPROVED && $story->cashback->transaction->status->slug !== TransactionStatusEnum::SUCCESS) {
-                $storyService->sendCashback($story);
+                $transactionService = new TransactionService();
+                $transactionService->sendCashback($story);
                 $notificationService->sendAndSaveNotification(
                     'Cashback Approved',
-                    'You have received a cashback of ' . $story->token->cashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
+                    'You have received a cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
                     $generalNotificationSubscription,
                 );
             }
@@ -57,7 +59,7 @@ class ValidateStory implements ShouldQueue
             if ($story['approval_status'] === StoryApprovalStatusEnum::REJECTED) {
                 $notificationService->sendAndSaveNotification(
                     'Cashback Rejected',
-                    'Your cashback of ' . $story->token->cashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected',
+                    'Your cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected',
                     $generalNotificationSubscription,
                 );
             }

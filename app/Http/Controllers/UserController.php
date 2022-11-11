@@ -52,10 +52,10 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request)
     {
-        $user = User::find(auth()->user()->id);
+        $user = auth()->user();
         try {
             $user->update($request->safe()->except('username'));
-            return response()->json($user->first());
+            return response()->json($user);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),

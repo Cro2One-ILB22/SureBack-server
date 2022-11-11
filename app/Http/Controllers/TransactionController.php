@@ -2,26 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ledger;
+use App\Models\FinancialTransaction;
 
 class TransactionController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
-        $transactions = Ledger::whereHas('transaction', function ($query) use ($user) {
-            $query->where('user_id', $user->id);
-        })->with('transaction.category')->get();
-
-        $transactions = $transactions->map(function ($transaction) {
+        $transactions = FinancialTransaction::where('user_id', $user->id)->with('status', 'category', 'paymentInstrument')->get()->map(function ($transaction) {
             return [
-                'id' => $transaction->id,
-                'amount' => $transaction->transaction->amount,
-                'category' => $transaction->transaction->category->slug,
-                'description' => $transaction->transaction->description,
-                'type' => $transaction->transaction->type,
-                'instrument' => $transaction->instrument,
-                'created_at' => $transaction->created_at,
+                ...$transaction->toArray(),
+                'status' => $transaction->status->slug,
+                'category' => $transaction->category->slug,
+                'payment_instrument' => $transaction->paymentInstrument->slug,
             ];
         });
 

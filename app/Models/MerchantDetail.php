@@ -32,20 +32,20 @@ class MerchantDetail extends Model
         'user',
         'created_at',
     ];
-    
+
     protected $casts = [
         'cashback_percent' => 'float',
         'cashback_limit' => 'integer',
         'daily_token_limit' => 'integer',
         'is_active_generating_token' => 'boolean',
-        'outstanding_coins' => 'integer',
-        'exchanged_coins' => 'integer',
     ];
 
     public function todaysTokenCount(): Attribute
     {
         return new Attribute(
-            fn () => $this->user->storyTokens
+            fn () => $this->user
+                ->purchasesAsMerchant()
+                ->whereHas('token')
                 ->where('created_at', '>=', now('Asia/Jakarta')->startOfDay())
                 ->count()
         );

@@ -15,10 +15,9 @@ return new class extends Migration
     {
         Schema::create('story_tokens', function (Blueprint $table) {
             $table->id();
-            $table->string('token')->unique();
+            $table->foreignId('purchase_id');
+            $table->string('code')->unique();
             $table->unsignedBigInteger('instagram_id');
-            $table->bigInteger('purchase_amount');
-            $table->foreignId('merchant_id');
             $table->timestamp('expires_at');
             $table->timestamps();
         });

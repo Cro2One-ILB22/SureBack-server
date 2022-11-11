@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\CashbackTypeEnum;
+use App\Enums\CoinTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,7 +25,7 @@ class TokenCashback extends Model
     protected $casts = [
         'amount' => 'integer',
         'percent' => 'float',
-        'type' => CashbackTypeEnum::class,
+        'type' => CoinTypeEnum::class,
     ];
 
     public function token()
