@@ -105,7 +105,7 @@ class InstagramController extends Controller
         }
     }
 
-    public function updateStory()
+    public function submitStory()
     {
         $request = request()->validate([
             'story_id' => 'required',

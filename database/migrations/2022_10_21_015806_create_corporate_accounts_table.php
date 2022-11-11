@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('bank_id')->nullable();
             $table->foreignId('payment_method_id');
-            $table->unsignedBigInteger('number');
+            $table->unsignedBigInteger('account_number');
             $table->timestamps();
         });
     }

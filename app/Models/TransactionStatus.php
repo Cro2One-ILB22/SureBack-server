@@ -13,4 +13,9 @@ class TransactionStatus extends Model
     protected $casts = [
         'slug' => TransactionStatusEnum::class,
     ];
+
+    protected $hidden = [
+        'updated_at',
+        'created_at',
+    ];
 }

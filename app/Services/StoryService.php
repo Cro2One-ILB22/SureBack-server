@@ -304,8 +304,7 @@ class StoryService
     $story->note = $storyRequest['note'] ?? null;
     $story->save();
 
-    if ($story->instagram_story_status === InstagramStoryStatusEnum::VALIDATED && !$story->cashback()->exists()) {
-      $this->sendCashback($story);
+    if ($story->instagram_story_status === InstagramStoryStatusEnum::VALIDATED) {
       ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id]);
     }
 

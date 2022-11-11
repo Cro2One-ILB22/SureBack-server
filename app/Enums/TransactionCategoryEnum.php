@@ -12,6 +12,8 @@ enum TransactionCategoryEnum: string
   case CASHBACK = 'cashback';
   case WITHDRAWAL = 'withdrawal';
   case STORY = 'story';
+  case PURCHASE = 'purchase';
+  case COIN_EXCHANGE = 'coin_exchange';
 
   public static function fullNames(): array
   {
@@ -28,6 +30,8 @@ enum TransactionCategoryEnum: string
       self::CASHBACK => 'Cashback',
       self::WITHDRAWAL => 'Withdrawal',
       self::STORY => 'Story',
+      self::PURCHASE => 'Purchase',
+      self::COIN_EXCHANGE => 'Coin Exchange',
     };
   }
 }

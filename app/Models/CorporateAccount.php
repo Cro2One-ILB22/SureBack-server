@@ -9,6 +9,15 @@ class CorporateAccount extends Model
 {
     use HasFactory;
 
+    protected $hidden = [
+        'updated_at',
+        'created_at',
+    ];
+
+    protected $casts = [
+        'account_number' => 'integer',
+    ];
+
     public function bank()
     {
         return $this->belongsTo(Bank::class);

@@ -33,10 +33,10 @@ Route::group([
     Route::get('profile/{username}', [InstagramController::class, 'profile']);
     Route::get('user/{id}', [InstagramController::class, 'user']);
     Route::post('token/generate', [InstagramController::class, 'generateToken'])->middleware('abilities:merchant');
-    Route::post('token/redeem', [InstagramController::class, 'redeemToken']);
-    Route::get('story', [InstagramController::class, 'story']);
-    Route::put('story', [InstagramController::class, 'updateStory']);
-    Route::put('story/approval', [InstagramController::class, 'approveStory']);
+    Route::post('token/redeem', [InstagramController::class, 'redeemToken'])->middleware('abilities:customer');
+    Route::get('story', [InstagramController::class, 'story'])->middleware('abilities:customer');
+    Route::post('story/submit', [InstagramController::class, 'submitStory'])->middleware('abilities:customer');
+    Route::put('story/approval', [InstagramController::class, 'approveStory'])->middleware('abilities:merchant');
 });
 
 Route::group([
@@ -47,7 +47,7 @@ Route::group([
 });
 
 Route::group([
-    'middleware' => 'auth:sanctum',
+    'middleware' => ['auth:sanctum', 'abilities:merchant'],
     'prefix' => 'merchant'
 ], function ($router) {
     Route::get('', [UserController::class, 'merchant']);
@@ -55,7 +55,7 @@ Route::group([
 });
 
 Route::group([
-    'middleware' => 'auth:sanctum',
+    'middleware' => ['auth:sanctum', 'abilities:customer'],
     'prefix' => 'customer'
 ], function ($router) {
     Route::get('', [UserController::class, 'customer']);

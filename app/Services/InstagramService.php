@@ -99,7 +99,7 @@ class InstagramService
     $queries = [
       'username' => $username,
     ];
-    $responseJson = $this->callAPI('GET', $path, $queries, auth: false);
+    $responseJson = $this->callAPI('GET', $path, $queries);
 
     return $responseJson['data']['user'];
   }

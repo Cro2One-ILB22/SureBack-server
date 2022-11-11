@@ -14,6 +14,9 @@ class FinancialTransaction extends Model
         'amount',
         'description',
         'type',
+        'user_id',
+        'transaction_category_id',
+        'transaction_status_id',
         // 'reference',
         // 'reference_type',
         // 'reference_id',
@@ -22,6 +25,12 @@ class FinancialTransaction extends Model
     protected $casts = [
         'amount' => 'integer',
         'type' => TransactionTypeEnum::class,
+    ];
+
+    protected $hidden = [
+        'user_id',
+        'transaction_category_id',
+        'transaction_status_id',
     ];
 
     public function user()

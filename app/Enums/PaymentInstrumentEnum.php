@@ -10,6 +10,7 @@ enum PaymentInstrumentEnum: string
 
   case COINS = 'coins';
   case BALANCE = 'balance';
+  case OTHER = 'other';
 
   public static function fullNames(): array
   {
@@ -24,6 +25,7 @@ enum PaymentInstrumentEnum: string
     return match ($this) {
       self::COINS => 'Coins',
       self::BALANCE => 'Balance',
+      self::OTHER => 'Other',
     };
   }
 }
