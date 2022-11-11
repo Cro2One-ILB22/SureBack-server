@@ -21,7 +21,7 @@ class NotificationSubscription extends Model
 
     public function notification()
     {
-        return $this->hasOne(UserNotification::class);
+        return $this->hasOne(Notification::class);
     }
 
     public function notificationSubscriptionable()
