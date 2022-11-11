@@ -67,13 +67,13 @@ class AuthController extends Controller
                 'instagram_username' => $request->safe()->username,
             ])
             ->except('username');
-        $user = DB::transaction(function () use ($validated) {
+        return DB::transaction(function () use ($validated) {
             $role = RegisterableRoleEnum::from($validated['role']);
             $user = User::create($validated);
 
             $user->roles()->attach(Role::where('slug', RoleEnum::USER)->first());
             $user->roles()->attach(Role::where('slug', $role)->first());
-            
+
             $user->coins()->createMany([
                 ['coin_type' => CoinTypeEnum::LOCAL],
                 ['coin_type' => CoinTypeEnum::GLOBAL],
@@ -87,16 +87,15 @@ class AuthController extends Controller
                 if ($role === RegisterableRoleEnum::MERCHANT) {
                     $user->merchantDetail()->create();
                 }
-                return $user;
             }
-        });
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'User registration failed'
-            ], Response::HTTP_BAD_REQUEST);
-        }
-        return $this->respondWithToken($user);
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User registration failed'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+            return $this->respondWithToken($user);
+        });
     }
 
     /**
@@ -107,12 +106,13 @@ class AuthController extends Controller
     public function login()
     {
         $credentials = request(['email', 'password']);
+        return DB::transaction(function () use ($credentials) {
+            if (!auth()->attempt($credentials)) {
+                return response()->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
 
-        if (!auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        return $this->respondWithToken(auth()->user());
+            return $this->respondWithToken(auth()->user());
+        });
     }
 
     /**
