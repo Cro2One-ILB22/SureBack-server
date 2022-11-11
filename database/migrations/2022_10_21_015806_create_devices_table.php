@@ -13,10 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('user_user_devices', function (Blueprint $table) {
+        Schema::create('devices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id');
-            $table->foreignId('user_device_id');
+            $table->string('identifier')->nullable()->unique();
+            $table->string('name')->nullable();
+            $table->string('os')->nullable();
+            $table->string('os_version')->nullable();
+            $table->string('model')->nullable();
+            $table->string('notification_token')->unique();
             $table->timestamps();
         });
     }
@@ -28,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('user_user_devices');
+        Schema::dropIfExists('devices');
     }
 };

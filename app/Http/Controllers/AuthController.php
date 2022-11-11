@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\CoinTypeEnum;
 use App\Enums\RegisterableRoleEnum;
 use App\Enums\RoleEnum;
-use App\Http\Requests\StoreUserDeviceRequest;
+use App\Http\Requests\StoreDeviceRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Models\Role;
 use App\Models\User;
@@ -141,7 +141,7 @@ class AuthController extends Controller
     {
         $user = auth()->user();
         $headers = $this->getDeviceHeaders();
-        $rules = (new StoreUserDeviceRequest())->rules();
+        $rules = (new StoreDeviceRequest())->rules();
         $deviceIdentifierKey = 'identifier';
         $deviceIdRule = $rules[$deviceIdentifierKey];
 
@@ -183,7 +183,7 @@ class AuthController extends Controller
     protected function respondWithToken(User $user)
     {
         $headers = $this->getDeviceHeaders();
-        $rules = (new StoreUserDeviceRequest())->rules();
+        $rules = (new StoreDeviceRequest())->rules();
         $validator = Validator::make($headers, $rules);
 
         if ($validator->fails()) {

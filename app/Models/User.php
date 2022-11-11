@@ -66,7 +66,7 @@ class User extends Authenticatable
 
     public function devices()
     {
-        return $this->belongsToMany(UserDevice::class, 'user_user_devices');
+        return $this->belongsToMany(Device::class, 'user_devices');
     }
 
     public function notificationSubscriptions()

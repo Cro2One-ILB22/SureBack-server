@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class UserDevice extends Model
+class Device extends Model
 {
     use HasFactory;
 
@@ -25,6 +25,6 @@ class UserDevice extends Model
 
     public function user()
     {
-        return $this->belongsToMany(User::class, 'user_user_devices');
+        return $this->belongsToMany(User::class, 'user_devices');
     }
 }

@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\UserDevice;
+use App\Models\Device;
 
 class DeviceService
 {
   function addDevice($user, $deviceRequest)
   {
-    $device = UserDevice::updateOrCreate(
+    $device = Device::updateOrCreate(
       ['identifier' => $deviceRequest['identifier']],
       $deviceRequest
     );
@@ -20,7 +20,7 @@ class DeviceService
 
   function removeFromDevice($user, $deviceIdentifier)
   {
-    $device = UserDevice::where('identifier', $deviceIdentifier)->first();
+    $device = Device::where('identifier', $deviceIdentifier)->first();
     if ($user->devices->contains($device)) {
       $user->devices()->detach($device);
     }
