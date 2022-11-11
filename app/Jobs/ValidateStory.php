@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\StoryApprovalStatusEnum;
 use App\Enums\TransactionStatusEnum;
+use App\Models\TransactionStatus;
 use App\Services\NotificationService;
 use App\Services\StoryService;
 use App\Services\TransactionService;
@@ -45,24 +46,33 @@ class ValidateStory implements ShouldQueue
         $generalNotificationSubscription = $story->customer->notificationSubscriptions()->where('slug', 'general')->first();
         if ($validated['success']) {
             info('Story validated successfully');
-            if ($story['approval_status'] === StoryApprovalStatusEnum::APPROVED && $story->cashback->transaction->status->slug !== TransactionStatusEnum::SUCCESS) {
-                $transactionService = new TransactionService();
-                $transactionService->sendCashback($story);
-                $notificationService->sendAndSaveNotification(
-                    'Cashback Approved',
-                    'You have received a cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
-                    $generalNotificationSubscription,
-                );
+            if ($story->cashback->transaction->status->slug !== TransactionStatusEnum::SUCCESS) {
+                $approvalStatus = $story['approval_status'];
+                if ($approvalStatus === StoryApprovalStatusEnum::APPROVED) {
+                    $transactionService = new TransactionService();
+                    $transactionService->sendCashback($story);
+                    $notificationService->sendAndSaveNotification(
+                        'Cashback Approved',
+                        'You have received a cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
+                        $generalNotificationSubscription,
+                    );
+                } else if ($approvalStatus === StoryApprovalStatusEnum::REJECTED) {
+                    $story->cashback->transaction->status()->associate(TransactionStatus::where('slug', TransactionStatusEnum::REJECTED)->first());
+                    $story->cashback->transaction->save();
+                    $notificationService->sendAndSaveNotification(
+                        'Cashback Rejected',
+                        'Your cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected' . ($story->note ? ' because of ' . '"' . $story->note . '"' : '') . '.',
+                        $generalNotificationSubscription,
+                    );
+                }
             }
         } else {
             info('Story validation failed');
-            if ($story['approval_status'] === StoryApprovalStatusEnum::REJECTED) {
-                $notificationService->sendAndSaveNotification(
-                    'Cashback Rejected',
-                    'Your cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected',
-                    $generalNotificationSubscription,
-                );
-            }
+            $notificationService->sendAndSaveNotification(
+                'Cashback Rejected',
+                'Your cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected because your story could not be found.',
+                $generalNotificationSubscription,
+            );
         }
     }
 }

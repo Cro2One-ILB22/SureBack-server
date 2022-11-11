@@ -16,6 +16,10 @@ use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class StoryService
 {
+  public function __construct()
+  {
+    $this->storyInspectedTimeBeforeExpiry = now()->addMinutes(3)->timestamp;
+  }
   public function generateToken(User $user, Purchase $purchase)
   {
     $todaysTokenCount = StoryToken::where('purchase_id', $purchase)
@@ -187,13 +191,17 @@ class StoryService
     $story->update([
       'instagram_story_id' => $instagramStoryId,
       'image_uri' => $mentionedStory['image_versions2']['candidates'][0]['url'],
+      'video_uri' => $mentionedStory['media_type'] === 2 ? $mentionedStory['video_versions'][0]['url'] : null,
+      'music_metadata' => $mentionedStory['music_metadata'] ?? null,
       'approval_status' => StoryApprovalStatusEnum::REVIEW,
       'instagram_story_status' => InstagramStoryStatusEnum::UPLOADED,
       'submitted_at' => now(),
+      'assessed_at' => null,
+      'expiring_at' => $mentionedStory['expiring_at'],
     ]);
 
     ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id])
-      ->delay(now()->addSeconds($mentionedStory['expiring_at'] - now()->addMinutes(3)->timestamp));
+      ->delay(now()->addSeconds($story->expiring_at - $this->storyInspectedTimeBeforeExpiry));
 
     return $story;
   }
@@ -231,17 +239,18 @@ class StoryService
     }
 
     $story->approval_status = StoryApprovalStatusEnum::from($storyRequest['approved']);
+    $story->assessed_at = now();
     $story->note = $storyRequest['note'] ?? null;
     $story->save();
 
-    if ($story->instagram_story_status === InstagramStoryStatusEnum::VALIDATED) {
+    if ($story->expiring_at < $this->storyInspectedTimeBeforeExpiry) {
       ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id]);
     }
 
     return $story;
   }
 
-  function getOnAirCustomerStory($instagramStoryId, $withExpiringAt = false)
+  function getOnAirCustomerStory($instagramStoryId)
   {
     $story = CustomerStory::where('instagram_story_id', $instagramStoryId)->first();
     if (!$story) {
@@ -257,25 +266,22 @@ class StoryService
     $instagramStory = array_shift($stories);
 
     if ($instagramStory) {
-      if ($withExpiringAt) {
-        $story->expiring_at = $instagramStory['expiring_at'];
-      }
       return $story;
     }
   }
 
   function validateStory($instagramStoryId)
   {
-    $story = $this->getOnAirCustomerStory($instagramStoryId, true);
+    $story = $this->getOnAirCustomerStory($instagramStoryId);
     info('validateStory', [$story]);
     if ($story) {
-      if ($story->expiring_at < now()->addMinutes(3)->timestamp) {
+      if ($story->expiring_at < $this->storyInspectedTimeBeforeExpiry) {
         $story->instagram_story_status = InstagramStoryStatusEnum::VALIDATED;
-        unset($story->expiring_at);
+        $story->inspected_at = now();
         $story->save();
       } else {
         ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id])
-          ->delay(now()->addSeconds($story->expiring_at - now()->addMinutes(3)->timestamp));
+          ->delay(now()->addSeconds($story->expiring_at - $this->storyInspectedTimeBeforeExpiry));
       }
 
       return [
@@ -287,6 +293,7 @@ class StoryService
     $story = CustomerStory::where('instagram_story_id', $instagramStoryId)->first();
     $story->update([
       'instagram_story_status' => InstagramStoryStatusEnum::DELETED,
+      'inspected_at' => now(),
     ]);
 
     return [

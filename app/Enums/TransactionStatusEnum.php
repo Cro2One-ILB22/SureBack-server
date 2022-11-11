@@ -16,6 +16,7 @@ enum TransactionStatusEnum: string
   case CANCELLED = 'cancelled';
   case REFUNDED = 'refunded';
   case EXPIRED = 'expired';
+  case REJECTED = 'rejected';
 
   public static function fullNames(): array
   {
@@ -36,6 +37,7 @@ enum TransactionStatusEnum: string
       self::CANCELLED => 'Cancelled',
       self::REFUNDED => 'Refunded',
       self::EXPIRED => 'Expired',
+      self::REJECTED => 'Rejected',
     };
   }
 }

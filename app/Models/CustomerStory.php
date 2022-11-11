@@ -19,6 +19,9 @@ class CustomerStory extends Model
         'approval_status',
         'instagram_story_status',
         'submitted_at',
+        'assessed_at',
+        'inspected_at',
+        'expiring_at',
     ];
 
     protected $hidden = [
@@ -36,6 +39,7 @@ class CustomerStory extends Model
         'image_uri' => 'string',
         'approval_status' => StoryApprovalStatusEnum::class,
         'instagram_story_status' => InstagramStoryStatusEnum::class,
+        'expiring_at' => 'integer',
     ];
 
     public function approvalStatus(): Attribute

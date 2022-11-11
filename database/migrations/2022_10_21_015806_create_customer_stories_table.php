@@ -25,8 +25,11 @@ return new class extends Migration
             $table->text('video_uri')->nullable();
             $table->enum('instagram_story_status', InstagramStoryStatusEnum::values())->nullable();
             $table->enum('approval_status', StoryApprovalStatusEnum::values())->nullable();
-            $table->timestamp('submitted_at')->nullable();
             $table->string('note')->nullable();
+            $table->integer('expiring_at')->nullable();
+            $table->timestamp('submitted_at')->nullable();
+            $table->timestamp('assessed_at')->nullable();
+            $table->timestamp('inspected_at')->nullable();
             $table->timestamps();
         });
     }
