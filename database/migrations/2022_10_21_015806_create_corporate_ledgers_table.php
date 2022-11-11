@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\TransactionTypeEnum;
+use App\Enums\AccountingEntryEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,11 +16,11 @@ return new class extends Migration
     {
         Schema::create('corporate_ledgers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('financial_transaction_id')->nullable();
+            $table->foreignId('transaction_id')->nullable();
             $table->bigInteger('amount');
             $table->bigInteger('balance_before');
             $table->bigInteger('balance_after');
-            $table->enum('type', TransactionTypeEnum::values());
+            $table->enum('accounting_entry', AccountingEntryEnum::values());
             $table->timestamps();
         });
     }

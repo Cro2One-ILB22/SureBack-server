@@ -52,7 +52,7 @@ class StoryToken extends Model
 
     public function transactions()
     {
-        return $this->belongsToMany(FinancialTransaction::class, 'token_transactions');
+        return $this->belongsToMany(Transaction::class, 'token_transactions');
     }
 
     public function story()

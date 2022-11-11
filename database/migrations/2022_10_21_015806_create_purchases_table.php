@@ -17,8 +17,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('customer_id')->nullable()->constrained('users')->restrictOnDelete();
             $table->foreignId('merchant_id')->constrained('users')->restrictOnDelete();
-            $table->foreignId('customer_transaction_id')->constrained('financial_transactions')->restrictOnDelete();
-            $table->foreignId('merchant_transaction_id')->constrained('financial_transactions')->restrictOnDelete();
+            $table->foreignId('customer_transaction_id')->constrained('transactions')->restrictOnDelete();
+            $table->foreignId('merchant_transaction_id')->constrained('transactions')->restrictOnDelete();
             $table->bigInteger('purchase_amount');
             $table->bigInteger('payment_amount');
             $table->timestamps();

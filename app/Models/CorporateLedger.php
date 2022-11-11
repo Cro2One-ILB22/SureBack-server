@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\TransactionTypeEnum;
+use App\Enums\AccountingEntryEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,7 +12,7 @@ class CorporateLedger extends Model
 
     protected $fillable = [
         'amount',
-        'type',
+        'accounting_entry',
         'balance_before',
         'balance_after',
     ];
@@ -21,11 +21,11 @@ class CorporateLedger extends Model
         'amount' => 'integer',
         'balance_before' => 'integer',
         'balance_after' => 'integer',
-        'type' => TransactionTypeEnum::class,
+        'accounting_entry' => AccountingEntryEnum::class,
     ];
 
-    public function financialTransaction()
+    public function transaction()
     {
-        return $this->belongsTo(FinancialTransaction::class);
+        return $this->belongsTo(Transaction::class);
     }
 }

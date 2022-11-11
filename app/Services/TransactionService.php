@@ -6,11 +6,11 @@ use App\Enums\CoinTypeEnum;
 use App\Enums\PaymentInstrumentEnum;
 use App\Enums\TransactionCategoryEnum;
 use App\Enums\TransactionStatusEnum;
-use App\Enums\TransactionTypeEnum;
+use App\Enums\AccountingEntryEnum;
 use App\Models\Cashback;
 use App\Models\CoinExchange;
 use App\Models\CustomerStory;
-use App\Models\FinancialTransaction;
+use App\Models\Transaction;
 use App\Models\Ledger;
 use App\Models\PaymentInstrument;
 use App\Models\Purchase;
@@ -41,17 +41,17 @@ class TransactionService
       $transactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::SUCCESS)->first();
       $paymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::OTHER)->first();
 
-      $customerTransaction = FinancialTransaction::create([
+      $customerTransaction = Transaction::create([
         'amount' => $paymentAmount,
-        'type' => TransactionTypeEnum::DEBIT,
+        'accounting_entry' => AccountingEntryEnum::DEBIT,
         'transaction_category_id' => $transactionCategory->id,
         'transaction_status_id' => $transactionStatus->id,
         'payment_instrument_id' => $paymentInstrument->id,
       ]);
 
-      $merchantTransaction = FinancialTransaction::create([
+      $merchantTransaction = Transaction::create([
         'amount' => $purchaseAmount,
-        'type' => TransactionTypeEnum::CREDIT,
+        'accounting_entry' => AccountingEntryEnum::CREDIT,
         'user_id' => $merchant->id,
         'transaction_category_id' => $transactionCategory->id,
         'transaction_status_id' => $transactionStatus->id,
@@ -75,7 +75,7 @@ class TransactionService
     return DB::transaction(function () use ($merchant, $customer, $usedCoins, $purchase) {
       $userCoin = UserCoin::where('customer_id', $customer->id)
         ->where('merchant_id', $merchant->id)
-        ->where('type', CoinTypeEnum::LOCAL)
+        ->where('coin_type', CoinTypeEnum::LOCAL)
         ->first();
 
       $merchantCoin = $merchant->coins()->where('coin_type', CoinTypeEnum::LOCAL)->first();
@@ -86,9 +86,9 @@ class TransactionService
       $paymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first();
 
       // customer
-      $customerCoinTransaction = new FinancialTransaction([
+      $customerCoinTransaction = new Transaction([
         'amount' => $usedCoins,
-        'type' => TransactionTypeEnum::DEBIT,
+        'accounting_entry' => AccountingEntryEnum::DEBIT,
       ]);
       $customerCoinTransaction->status()->associate($transactionStatus);
       $customerCoinTransaction->category()->associate($transactionCategory);
@@ -103,9 +103,9 @@ class TransactionService
       $customerCoinLedger->save();
 
       // merchant
-      $merchantCoinTransaction = new FinancialTransaction([
+      $merchantCoinTransaction = new Transaction([
         'amount' => $usedCoins,
-        'type' => TransactionTypeEnum::CREDIT,
+        'accounting_entry' => AccountingEntryEnum::CREDIT,
       ]);
       $merchantCoinTransaction->status()->associate($transactionStatus);
       $merchantCoinTransaction->category()->associate($transactionCategory);
@@ -155,9 +155,9 @@ class TransactionService
         ->where('coin_type', CoinTypeEnum::LOCAL)
         ->first();
 
-      $merchantTransaction = new FinancialTransaction([
+      $merchantTransaction = new Transaction([
         'amount' => $amount,
-        'type' => TransactionTypeEnum::DEBIT,
+        'accounting_entry' => AccountingEntryEnum::DEBIT,
       ]);
       $merchantTransaction->status()->associate($transactionStatus);
       $merchantTransaction->category()->associate(TransactionCategory::where('slug', TransactionCategoryEnum::STORY)->first());
@@ -208,9 +208,9 @@ class TransactionService
       $customerTransactionCategory = TransactionCategory::where('slug', TransactionCategoryEnum::CASHBACK)->first();
       $customerTransactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::CREATED)->first();
       $customerPaymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first();
-      $customerCashbackTransaction = new FinancialTransaction([
+      $customerCashbackTransaction = new Transaction([
         'amount' => $story->token->tokenCashback->amount,
-        'type' => TransactionTypeEnum::CREDIT,
+        'accounting_entry' => AccountingEntryEnum::CREDIT,
       ]);
       $customerCashbackTransaction->category()->associate($customerTransactionCategory);
       $customerCashbackTransaction->status()->associate($customerTransactionStatus);

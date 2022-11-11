@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('financial_transactions', function (Blueprint $table) {
+        Schema::table('transactions', function (Blueprint $table) {
             $table->foreign('user_id')->references(['id'])->on('users')->onUpdate('RESTRICT')->onDelete('RESTRICT');
             $table->foreign('transaction_category_id')->references(['id'])->on('transaction_categories')->onUpdate('RESTRICT')->onDelete('RESTRICT');
             $table->foreign('transaction_status_id')->references(['id'])->on('transaction_statuses')->onUpdate('RESTRICT')->onDelete('RESTRICT');
@@ -28,11 +28,11 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('financial_transactions', function (Blueprint $table) {
-            $table->dropForeign('financial_transactions_user_id_foreign');
-            $table->dropForeign('financial_transactions_transaction_category_id_foreign');
-            $table->dropForeign('financial_transactions_transaction_status_id_foreign');
-            $table->dropForeign('financial_transactions_payment_instrument_id_foreign');
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->dropForeign('transactions_user_id_foreign');
+            $table->dropForeign('transactions_transaction_category_id_foreign');
+            $table->dropForeign('transactions_transaction_status_id_foreign');
+            $table->dropForeign('transactions_payment_instrument_id_foreign');
         });
     }
 };

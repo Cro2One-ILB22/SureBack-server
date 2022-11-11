@@ -16,6 +16,6 @@ class Deposit extends Model
 
     public function transaction()
     {
-        return $this->belongsTo(FinancialTransaction::class);
+        return $this->belongsTo(Transaction::class);
     }
 }

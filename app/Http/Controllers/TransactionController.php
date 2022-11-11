@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FinancialTransaction;
+use App\Models\Transaction;
 
 class TransactionController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
-        $transactions = FinancialTransaction::where('user_id', $user->id)->with('status', 'category', 'paymentInstrument')->get()->map(function ($transaction) {
+        $transactions = Transaction::where('user_id', $user->id)->with('status', 'category', 'paymentInstrument')->get()->map(function ($transaction) {
             return [
                 ...$transaction->toArray(),
                 'status' => $transaction->status->slug,

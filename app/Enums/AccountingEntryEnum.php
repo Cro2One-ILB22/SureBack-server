@@ -4,7 +4,7 @@ namespace App\Enums;
 
 use App\Traits\EnumToArray;
 
-enum TransactionTypeEnum: string
+enum AccountingEntryEnum: string
 {
   use EnumToArray;
 

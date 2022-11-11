@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('withdrawals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('bank_account_id');
-            $table->foreignId('financial_transaction_id');
+            $table->foreignId('transaction_id');
             $table->timestamps();
         });
     }

@@ -17,8 +17,8 @@ return new class extends Migration
         Schema::create('coin_exchanges', function (Blueprint $table) {
             $table->id();
             $table->foreignId('purchase_id')->constrained()->restrictOnDelete();
-            $table->foreignId('customer_transaction_id')->constrained('financial_transactions')->restrictOnDelete();
-            $table->foreignId('merchant_transaction_id')->constrained('financial_transactions')->restrictOnDelete();
+            $table->foreignId('customer_transaction_id')->constrained('transactions')->restrictOnDelete();
+            $table->foreignId('merchant_transaction_id')->constrained('transactions')->restrictOnDelete();
             $table->enum('coin_type', CoinTypeEnum::values());
             $table->timestamps();
         });

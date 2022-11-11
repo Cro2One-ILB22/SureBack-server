@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use App\Enums\TransactionTypeEnum;
+use App\Enums\AccountingEntryEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class FinancialTransaction extends Model
+class Transaction extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'amount',
         'description',
-        'type',
+        'accounting_entry',
         'user_id',
         'transaction_category_id',
         'transaction_status_id',
@@ -25,7 +25,7 @@ class FinancialTransaction extends Model
 
     protected $casts = [
         'amount' => 'integer',
-        'type' => TransactionTypeEnum::class,
+        'accounting_entry' => AccountingEntryEnum::class,
     ];
 
     protected $hidden = [

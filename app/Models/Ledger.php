@@ -32,6 +32,6 @@ class Ledger extends Model
 
     public function transaction()
     {
-        return $this->belongsTo(FinancialTransaction::class, 'financial_transaction_id');
+        return $this->belongsTo(Transaction::class, 'transaction_id');
     }
 }

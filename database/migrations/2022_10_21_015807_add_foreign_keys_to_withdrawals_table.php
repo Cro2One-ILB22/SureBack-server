@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('withdrawals', function (Blueprint $table) {
             $table->foreign('bank_account_id')->references(['id'])->on('bank_accounts')->onUpdate('RESTRICT')->onDelete('RESTRICT');
-            $table->foreign('financial_transaction_id')->references(['id'])->on('financial_transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('transaction_id')->references(['id'])->on('transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -28,7 +28,7 @@ return new class extends Migration
     {
         Schema::table('withdrawals', function (Blueprint $table) {
             $table->dropForeign('withdrawals_bank_account_id_foreign');
-            $table->dropForeign('withdrawals_financial_transaction_id_foreign');
+            $table->dropForeign('withdrawals_transaction_id_foreign');
         });
     }
 };

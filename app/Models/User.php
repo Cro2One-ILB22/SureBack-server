@@ -23,9 +23,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'profile_picture',
         'instagram_id',
         'instagram_username',
-        'profile_picture',
     ];
 
     /**
@@ -81,7 +81,7 @@ class User extends Authenticatable
 
     public function transactions()
     {
-        return $this->hasMany(FinancialTransaction::class);
+        return $this->hasMany(Transaction::class);
     }
 
     public function stories()

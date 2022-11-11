@@ -14,7 +14,7 @@ class TokenCashback extends Model
         'token_id',
         'amount',
         'percent',
-        'type',
+        'coin_type',
     ];
 
     protected $hidden = [
@@ -25,7 +25,7 @@ class TokenCashback extends Model
     protected $casts = [
         'amount' => 'integer',
         'percent' => 'float',
-        'type' => CoinTypeEnum::class,
+        'coin_type' => CoinTypeEnum::class,
     ];
 
     public function token()

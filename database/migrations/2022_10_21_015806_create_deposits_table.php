@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('deposits', function (Blueprint $table) {
             $table->id();
             $table->foreignId('corporate_account_id');
-            $table->foreignId('financial_transaction_id');
+            $table->foreignId('transaction_id');
             $table->string('proof')->nullable();
             $table->timestamps();
         });

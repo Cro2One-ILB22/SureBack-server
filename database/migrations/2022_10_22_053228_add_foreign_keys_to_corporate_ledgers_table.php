@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('corporate_ledgers', function (Blueprint $table) {
-            $table->foreign('financial_transaction_id')->references(['id'])->on('financial_transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
+            $table->foreign('transaction_id')->references(['id'])->on('transactions')->onUpdate('RESTRICT')->onDelete('RESTRICT');
         });
     }
 
@@ -26,7 +26,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('corporate_ledgers', function (Blueprint $table) {
-            $table->dropForeign('corporate_ledgers_financial_transaction_id_foreign');
+            $table->dropForeign('corporate_ledgers_transaction_id_foreign');
         });
     }
 };

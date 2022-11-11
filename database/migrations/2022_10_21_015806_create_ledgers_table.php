@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('ledgers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('financial_transaction_id');
+            $table->foreignId('transaction_id');
             $table->bigInteger('before');
             $table->bigInteger('after');
             $table->timestamps();

@@ -50,7 +50,7 @@ class StoryService
       $tokenCashback = new TokenCashback([
         'amount' => $cashbackAmount,
         'percent' => $cashbackPercent,
-        'type' => CoinTypeEnum::LOCAL,
+        'coin_type' => CoinTypeEnum::LOCAL,
       ]);
       $tokenCashback->token()->associate($storyToken);
       $tokenCashback->save();

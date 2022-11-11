@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('token_id')->constrained('story_tokens')->cascadeOnDelete();
             $table->bigInteger('amount');
             $table->float('percent')->nullable();
-            $table->enum('type', CoinTypeEnum::values());
+            $table->enum('coin_type', CoinTypeEnum::values());
             $table->timestamps();
         });
     }

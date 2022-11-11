@@ -41,12 +41,12 @@ class Purchase extends Model
 
     public function customerTransaction()
     {
-        return $this->belongsTo(FinancialTransaction::class, 'customer_transaction_id');
+        return $this->belongsTo(Transaction::class, 'customer_transaction_id');
     }
 
     public function merchantTransaction()
     {
-        return $this->belongsTo(FinancialTransaction::class, 'merchant_transaction_id');
+        return $this->belongsTo(Transaction::class, 'merchant_transaction_id');
     }
 
     public function coinExchange()
