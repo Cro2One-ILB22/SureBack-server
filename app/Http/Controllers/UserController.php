@@ -18,13 +18,18 @@ class UserController extends Controller
      */
     public function merchant()
     {
-        $response = [
-            'results' => User::whereHas('roles', function ($query) {
-                $query->where('slug', RoleEnum::MERCHANT);
-            })->get(),
-        ];
+        $merchants = User::whereHas('roles', function ($query) {
+            $query->where('slug', RoleEnum::MERCHANT);
+        })->with('merchantDetail');
 
-        return response()->json($response);
+        $name = 'name';
+        if (request()->has($name)) {
+            $merchants = $merchants->where($name, 'like', '%' . request()->$name . '%');
+        }
+
+        $merchants = $merchants->paginate();
+
+        return response()->json($merchants);
     }
 
     /**
@@ -34,13 +39,18 @@ class UserController extends Controller
      */
     public function customer()
     {
-        $response = [
-            'results' => User::whereHas('roles', function ($query) {
-                $query->where('slug', RoleEnum::CUSTOMER);
-            })->get(),
-        ];
+        $customers = User::whereHas('roles', function ($query) {
+            $query->where('slug', RoleEnum::CUSTOMER);
+        });
 
-        return response()->json($response);
+        $name = 'name';
+        if (request()->has($name)) {
+            $customers = $customers->where($name, 'like', '%' . request()->$name . '%');
+        }
+
+        $customers = $customers->paginate();
+
+        return response()->json($customers);
     }
 
     /**

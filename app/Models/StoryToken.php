@@ -33,7 +33,13 @@ class StoryToken extends Model
     protected function code(): Attribute
     {
         return new Attribute(
-            fn ($value) => CryptoService::decrypt($value),
+            function ($value) {
+                $token = CryptoService::decrypt($value);
+                if (mb_check_encoding($token, 'UTF-8')) {
+                    return $token;
+                }
+                return 'expired';
+            },
             fn ($value) => CryptoService::encrypt($value)
         );
     }

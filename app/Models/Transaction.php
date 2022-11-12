@@ -80,8 +80,23 @@ class Transaction extends Model
         return $this->hasOne(Deposit::class);
     }
 
-    public function coinExchange()
+    public function customerPurchase()
     {
-        return $this->hasOne(CoinExchange::class);
+        return $this->hasOne(Purchase::class, 'customer_transaction_id');
+    }
+
+    public function merchantPurchase()
+    {
+        return $this->hasOne(Purchase::class, 'merchant_transaction_id');
+    }
+
+    public function customerCoinExchange()
+    {
+        return $this->hasOne(CoinExchange::class, 'customer_transaction_id');
+    }
+
+    public function merchantCoinExchange()
+    {
+        return $this->hasOne(CoinExchange::class, 'merchant_transaction_id');
     }
 }

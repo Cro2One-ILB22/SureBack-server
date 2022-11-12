@@ -110,7 +110,8 @@ class InstagramController extends Controller
         ]);
         $token = $validated['token'];
         try {
-            return $this->storyService->redeemToken($token, auth()->user());
+            $tokenResponse = $this->storyService->redeemToken($token, auth()->user());
+            return response()->json($tokenResponse);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -133,7 +134,7 @@ class InstagramController extends Controller
 
         try {
             $stories = $this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id);
-            return response()->json(['results' => $stories]);
+            return response()->json(['data' => $stories]);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -179,22 +180,51 @@ class InstagramController extends Controller
     public function merchantToken()
     {
         $user = auth()->user();
-        $tokens = StoryToken::whereHas('purchase', function ($purchase) use ($user) {
-            $purchase->where('merchant_id', $user->id);
-        })->get();
-        return response()->json([
-            'result' => $tokens->load('story'),
+        $request = request()->validate([
+            'expired' => 'boolean',
         ]);
+
+        $tokens = $tokens = StoryToken::whereHas('purchase', function ($purchase) use ($user) {
+            $purchase->where('merchant_id', $user->id);
+        });
+
+        if (array_key_exists('expired', $request)) {
+            $expired = $request['expired'];
+
+            if ($expired == 0) {
+                $tokens = $tokens->where('expires_at', '>', now());
+            } else if ($expired == 1) {
+                $tokens = $tokens->where('expires_at', '<=', now());
+            }
+        }
+
+        $tokens = $tokens->paginate();
+        return response()->json($tokens);
     }
 
     public function customerToken()
     {
         $user = auth()->user();
+        $request = request()->validate([
+            'expired' => 'boolean',
+        ]);
+
         $tokens = StoryToken::whereHas('story', function ($query) use ($user) {
             $query->where('customer_id', $user->id);
-        })->with('story')->get();
-        return response()->json([
-            'result' => $tokens,
-        ]);
+        })->with('story');
+
+        if (array_key_exists('expired', $request)) {
+            $expired = $request['expired'];
+
+            if ($expired == 0) {
+                $tokens = $tokens->where('expires_at', '>', now());
+            } else if ($expired == 1) {
+                $tokens = $tokens->where('expires_at', '<=', now());
+            }
+        }
+
+        $tokens = $tokens->paginate();
+
+        return response()->json($tokens);
     }
 }
