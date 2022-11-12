@@ -22,9 +22,7 @@ class StoryService
   }
   public function generateToken(User $user, Purchase $purchase)
   {
-    $todaysTokenCount = StoryToken::where('purchase_id', $purchase)
-      ->where('created_at', '>=', now('Asia/Jakarta')->startOfDay())
-      ->count();
+    $todaysTokenCount = $user->merchantDetail->todaysTokenCount();
     $dailyTokenLimit = $user->merchantDetail->daily_token_limit;
 
     if ($dailyTokenLimit && $todaysTokenCount >= $dailyTokenLimit) {
