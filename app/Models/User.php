@@ -108,4 +108,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Purchase::class, 'merchant_id');
     }
+
+    public function isMerchant()
+    {
+        return $this->roles()->where('slug', 'merchant')->exists();
+    }
+
+    public function isCustomer()
+    {
+        return $this->roles()->where('slug', 'customer')->exists();
+    }
 }

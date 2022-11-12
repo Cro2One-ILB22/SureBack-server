@@ -105,7 +105,10 @@ class InstagramController extends Controller
 
     public function redeemToken()
     {
-        $token = request()->code;
+        $validated = request()->validate([
+            'token' => 'required|string',
+        ]);
+        $token = $validated['token'];
         try {
             return $this->storyService->redeemToken($token, auth()->user());
         } catch (BadRequestException $e) {

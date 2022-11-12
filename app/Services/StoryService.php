@@ -62,6 +62,9 @@ class StoryService
 
   public function redeemToken(string $token, User $customer)
   {
+    if ($customer->isMerchant()) {
+      throw new BadRequestException('Merchant can\'t redeem token');
+    } 
     $encryptedToken = CryptoService::encrypt($token);
     $storyToken = StoryToken::where('code', $encryptedToken)->first();
     if (!$storyToken) {
