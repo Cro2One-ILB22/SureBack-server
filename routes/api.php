@@ -48,19 +48,19 @@ Route::group([
 });
 
 Route::group([
-    'middleware' => ['auth:sanctum', 'abilities:merchant'],
+    'middleware' => 'auth:sanctum',
     'prefix' => 'merchant'
 ], function ($router) {
     Route::get('', [UserController::class, 'merchant']);
-    Route::get('token', [InstagramController::class, 'merchantToken']);
+    Route::get('token', [InstagramController::class, 'merchantToken'])->middleware('abilities:merchant');
 });
 
 Route::group([
-    'middleware' => ['auth:sanctum', 'abilities:customer'],
+    'middleware' => 'auth:sanctum',
     'prefix' => 'customer'
 ], function ($router) {
     Route::get('', [UserController::class, 'customer']);
-    Route::get('token', [InstagramController::class, 'customerToken']);
+    Route::get('token', [InstagramController::class, 'customerToken'])->middleware('abilities:customer');
 });
 
 Route::group([
