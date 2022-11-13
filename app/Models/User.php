@@ -99,6 +99,16 @@ class User extends Authenticatable
         return $this->hasMany(CoinBalance::class);
     }
 
+    public function customerCoins()
+    {
+        return $this->hasMany(UserCoin::class, 'customer_id');
+    }
+
+    public function merchantCoins()
+    {
+        return $this->hasMany(UserCoin::class, 'merchant_id');
+    }
+
     public function purchasesAsCustomer()
     {
         return $this->hasMany(Purchase::class, 'customer_id');

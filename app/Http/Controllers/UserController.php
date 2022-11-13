@@ -16,11 +16,16 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function merchant()
+    public function merchants()
     {
+        $userId = auth()->user()->id;
         $merchants = User::whereHas('roles', function ($query) {
             $query->where('slug', RoleEnum::MERCHANT);
-        })->with('merchantDetail');
+        })
+            ->whereHas('merchantCoins', function ($query) use ($userId) {
+                $query->where('customer_id', $userId);
+            })
+            ->with('merchantDetail', 'merchantCoins');
 
         $name = 'name';
         if (request()->has($name)) {
@@ -37,11 +42,16 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function customer()
+    public function customers()
     {
+        $userId = auth()->user()->id;
         $customers = User::whereHas('roles', function ($query) {
             $query->where('slug', RoleEnum::CUSTOMER);
-        });
+        })
+            ->whereHas('customerCoins', function ($query) use ($userId) {
+                $query->where('merchant_id', $userId);
+            })
+            ->with('customerCoins');
 
         $name = 'name';
         if (request()->has($name)) {

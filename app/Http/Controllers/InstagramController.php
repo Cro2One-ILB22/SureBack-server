@@ -177,16 +177,24 @@ class InstagramController extends Controller
         }
     }
 
-    public function merchantToken()
+    public function storyToken()
     {
         $user = auth()->user();
         $request = request()->validate([
             'expired' => 'boolean',
+            'submitted' => 'boolean',
+            'redeemed' => 'boolean',
         ]);
 
-        $tokens = $tokens = StoryToken::whereHas('purchase', function ($purchase) use ($user) {
-            $purchase->where('merchant_id', $user->id);
-        });
+        if ($user->isMerchant()) {
+            $tokens = StoryToken::whereHas('purchase', function ($purchase) use ($user) {
+                $purchase->where('merchant_id', $user->id);
+            });
+        } else {
+            $tokens = StoryToken::whereHas('story', function ($query) use ($user) {
+                $query->where('customer_id', $user->id);
+            })->with('story');
+        }
 
         if (array_key_exists('expired', $request)) {
             $expired = $request['expired'];
@@ -198,33 +206,33 @@ class InstagramController extends Controller
             }
         }
 
-        $tokens = $tokens->paginate();
-        return response()->json($tokens);
-    }
+        if (array_key_exists('submitted', $request)) {
+            $submitted = $request['submitted'];
 
-    public function customerToken()
-    {
-        $user = auth()->user();
-        $request = request()->validate([
-            'expired' => 'boolean',
-        ]);
-
-        $tokens = StoryToken::whereHas('story', function ($query) use ($user) {
-            $query->where('customer_id', $user->id);
-        })->with('story');
-
-        if (array_key_exists('expired', $request)) {
-            $expired = $request['expired'];
-
-            if ($expired == 0) {
-                $tokens = $tokens->where('expires_at', '>', now());
-            } else if ($expired == 1) {
-                $tokens = $tokens->where('expires_at', '<=', now());
+            if ($submitted == 0) {
+                $tokens = $tokens->whereHas('story', function ($query) {
+                    $query->whereNull('submitted_at');
+                });
+            } else if ($submitted == 1) {
+                $tokens = $tokens->whereHas('story', function ($query) {
+                    $query->whereNotNull('submitted_at');
+                });
             }
         }
 
-        $tokens = $tokens->paginate();
+        if (array_key_exists('redeemed', $request)) {
+            $redeemed = $request['redeemed'];
 
+            if ($redeemed == 0) {
+                $tokens = $tokens->whereDoesntHave('story');
+            } else if ($redeemed == 1) {
+                $tokens = $tokens->whereHas('story');
+            }
+        }
+
+        $tokens = $tokens
+            ->with('story')
+            ->paginate();
         return response()->json($tokens);
     }
 }

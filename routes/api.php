@@ -35,6 +35,7 @@ Route::group([
     Route::post('purchase/qr', [InstagramController::class, 'qrScan'])->middleware('abilities:merchant');
     Route::post('token/generate', [InstagramController::class, 'generateToken'])->middleware('abilities:merchant');
     Route::post('token/redeem', [InstagramController::class, 'redeemToken'])->middleware('abilities:customer');
+    Route::get('token', [InstagramController::class, 'storyToken']);
     Route::get('story', [InstagramController::class, 'story'])->middleware('abilities:customer');
     Route::post('story/submit', [InstagramController::class, 'submitStory'])->middleware('abilities:customer');
     Route::put('story/approval', [InstagramController::class, 'approveStory'])->middleware('abilities:merchant');
@@ -51,16 +52,14 @@ Route::group([
     'middleware' => 'auth:sanctum',
     'prefix' => 'merchant'
 ], function ($router) {
-    Route::get('', [UserController::class, 'merchant']);
-    Route::get('token', [InstagramController::class, 'merchantToken'])->middleware('abilities:merchant');
+    Route::get('', [UserController::class, 'merchants']);
 });
 
 Route::group([
     'middleware' => 'auth:sanctum',
     'prefix' => 'customer'
 ], function ($router) {
-    Route::get('', [UserController::class, 'customer']);
-    Route::get('token', [InstagramController::class, 'customerToken'])->middleware('abilities:customer');
+    Route::get('', [UserController::class, 'customers']);
 });
 
 Route::group([
