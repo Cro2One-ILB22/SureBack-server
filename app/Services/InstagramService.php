@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\VariableCategoryEnum;
+use App\Enums\VariableEnum;
 use App\Models\User;
+use App\Models\Variable;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -13,47 +16,73 @@ class InstagramService
 {
   static function callAPI($method, $path, $queries = [], $headers = [], $body = null, $auth = true)
   {
-    $keyHost = 'Host';
-    $keyXAppId = 'X-IG-App-ID';
-    $keySessionId = 'sessionid';
-    $keyUserAgent = 'User-Agent';
-    $keyReferer = 'Referer';
-    $keyOrigin = 'Origin';
+    $variables = Variable::select('key', 'value')->whereHas('categories', function ($query) {
+      $query->whereIn('slug', [VariableCategoryEnum::IG_WS]);
+    })->get()->keyBy('key')->map(function ($item) {
+      return $item->value;
+    })->toArray();
+    $variables = array_filter($variables, fn ($value) => $value !== null);
 
-    $baseUrl = config('instagram.base_url');
-    $host = config('instagram.host');
-    $xAppId = config('instagram.x_app_id');
-    $sessionId = config('instagram.session_id');
-    $userAgent = config('instagram.user_agent');
-    $referrer = config('instagram.referrer');
-    $origin = config('instagram.origin');
+    $baseUrl = $variables[VariableEnum::IG_BASE_URL->value];
+    $host = $variables[VariableEnum::IG_HOST->value];
+    $xAppId = $variables[VariableEnum::IG_APP_ID->value];
+    $sessionId = $variables[VariableEnum::IG_SESSION_ID->value];
+    $userAgent = $variables[VariableEnum::IG_USER_AGENT->value];
+    $referrer = $variables[VariableEnum::IG_REFERER->value];
+    $origin = $variables[VariableEnum::IG_ORIGIN->value];
+    $csrfToken = $variables[VariableEnum::IG_CSRF_TOKEN->value];
+    $asbdId = $variables[VariableEnum::IG_ASBD_ID->value];
     $url = $baseUrl . $path;
+    $requestedWith = $variables[VariableEnum::IG_REQUESTED_WITH->value];
+    $altUsed = $variables[VariableEnum::IG_ALT_USED->value];
+    $secFetchSite = $variables[VariableEnum::IG_SEC_FETCH_SITE->value];
+    $secFetchMode = $variables[VariableEnum::IG_SEC_FETCH_MODE->value];
+    $secFetchDest = $variables[VariableEnum::IG_SEC_FETCH_DEST->value];
+    $te = $variables[VariableEnum::IG_TE->value];
 
-    $headers = array_merge($headers, [
-      $keyHost => $host,
-      $keyXAppId => $xAppId,
-      $keyUserAgent => $userAgent,
-      $keyReferer => $referrer,
-      $keyOrigin => $origin,
-    ]);
+    $generalHeaders = [
+      'Host' => $host,
+      'X-IG-App-ID' => $xAppId,
+      'User-Agent' => $userAgent,
+      'Referer' => $referrer,
+      'Origin' => $origin,
+      'X-ASBD-ID' => $asbdId,
+      'X-Requested-With' => $requestedWith,
+      'Alt-Used' => $altUsed,
+      'Sec-Fetch-Site' => $secFetchSite,
+      'Sec-Fetch-Mode' => $secFetchMode,
+      'Sec-Fetch-Dest' => $secFetchDest,
+      'TE' => $te,
+    ];
 
-    $response = Http::acceptJson()
-      ->withHeaders($headers);
+    $response = Http::acceptJson();
 
     if ($auth) {
-      $cookieJar = CookieJar::fromArray([
-        $keySessionId => $sessionId,
-      ], $host);
+      $generalHeaders = array_merge($generalHeaders, [
+        'X-CSRFToken' => $csrfToken,
+      ]);
+      $cookies = [
+        'csrftoken' => $csrfToken,
+        'sessionid' => $sessionId,
+      ];
+
+      $cookieJar = CookieJar::fromArray($cookies, $host);
 
       $response = $response->withOptions([
         'cookies' => $cookieJar,
       ]);
     }
 
-    $response = $response->$method($url, $queries, $body);
+    $headers = array_merge($generalHeaders, $headers);
+
+    $response = $response
+      ->withHeaders($headers)
+      ->$method($url, $queries, $body);
+
+    // InstagramService::ssoUsers($headers, $cookies);
 
     if (!$response->successful()) {
-      throw new BadRequestException('Failed to request API');
+      throw new BadRequestException('Under maintenance');
     }
     return $response->json();
   }
@@ -99,7 +128,7 @@ class InstagramService
     $queries = [
       'username' => $username,
     ];
-    $responseJson = $this->callAPI('GET', $path, $queries);
+    $responseJson = $this->callAPI('GET', $path, $queries, auth: false);
 
     return $responseJson['data']['user'];
   }
@@ -240,5 +269,20 @@ class InstagramService
     if (!$otpService->verifyInstagramOTP($reqData)) {
       throw new BadRequestException('Invalid OTP');
     }
+  }
+
+  private static function ssoUsers($headers, $cookies)
+  {
+    $url = 'https://www.instagram.com/api/v1/web/fxcal/ig_sso_users/';
+    $headers = array_merge($headers, [
+      'Accept' => '*/*',
+      'Accept-Language' => 'en-US,en;q=0.5',
+      'Accept-Encoding' => 'gzip, deflate, br',
+      'Content-Type' => 'application/x-www-form-urlencoded',
+      'Connection' => 'keep-alive',
+    ]);
+
+    $response = Http::withHeaders($headers)->withCookies($cookies, 'www.instagram.com')->post($url);
+    return $response->json();
   }
 }

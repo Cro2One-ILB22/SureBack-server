@@ -45,13 +45,6 @@ jobs:
           echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env
           echo "FIREBASE_SERVER_KEY=${{ secrets.FIREBASE_SERVER_KEY }}" >> .env
           echo "FIREBASE_SENDER_ID=${{ secrets.FIREBASE_SENDER_ID }}" >> .env
-          echo "INSTAGRAM_BASE_URL=${{ secrets.INSTAGRAM_BASE_URL }}" >> .env
-          echo "INSTAGRAM_X_IG_APP_ID=${{ secrets.INSTAGRAM_X_IG_APP_ID }}" >> .env
-          echo "INSTAGRAM_SESSION_ID=${{ secrets.INSTAGRAM_SESSION_ID }}" >> .env
-          echo "INSTAGRAM_HOST=${{ secrets.INSTAGRAM_HOST }}" >> .env
-          echo "INSTAGRAM_USER_AGENT=${{ secrets.INSTAGRAM_USER_AGENT }}" >> .env
-          echo "INSTAGRAM_REFERER=${{ secrets.INSTAGRAM_REFERER }}" >> .env
-          echo "INSTAGRAM_ORIGIN=${{ secrets.INSTAGRAM_ORIGIN }}" >> .env
           echo "CODE_CIPHERING=${{ secrets.CODE_CIPHERING }}" >> .env
           echo "CODE_DIGEST=${{ secrets.CODE_DIGEST }}" >> .env
           echo "CODE_ENCRYPTION_IV=${{ secrets.CODE_ENCRYPTION_IV }}" >> .env

@@ -65,13 +65,6 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_SERVER_KEY: ${{ secrets.FIREBASE_SERVER_KEY }}
           FIREBASE_SENDER_ID: ${{ secrets.FIREBASE_SENDER_ID }}
-          INSTAGRAM_BASE_URL: ${{ secrets.INSTAGRAM_BASE_URL }}
-          INSTAGRAM_X_IG_APP_ID: ${{ secrets.INSTAGRAM_X_IG_APP_ID }}
-          INSTAGRAM_SESSION_ID: ${{ secrets.INSTAGRAM_SESSION_ID }}
-          INSTAGRAM_HOST: ${{ secrets.INSTAGRAM_HOST }}
-          INSTAGRAM_USER_AGENT: ${{ secrets.INSTAGRAM_USER_AGENT }}
-          INSTAGRAM_REFERER: ${{ secrets.INSTAGRAM_REFERER }}
-          INSTAGRAM_ORIGIN: ${{ secrets.INSTAGRAM_ORIGIN }}
           CODE_CIPHERING: ${{ secrets.CODE_CIPHERING }}
           CODE_DIGEST: ${{ secrets.CODE_DIGEST }}
           CODE_ENCRYPTION_IV: ${{ secrets.CODE_ENCRYPTION_IV }}
