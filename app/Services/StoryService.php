@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CashbackCalculationMethodEnum;
 use App\Enums\CoinTypeEnum;
 use App\Enums\InstagramStoryStatusEnum;
 use App\Enums\StoryApprovalStatusEnum;
@@ -34,9 +35,17 @@ class StoryService
     }
 
     return DB::transaction(function () use ($user, $purchase) {
+      $cashbackCalculationMethod = $user->merchantDetail->cashback_calculation_method;
       $purchaseAmount = $purchase->purchase_amount;
-      $cashbackPercent = $user->merchantDetail->cashback_percent;
-      $cashbackAmount = intval((($cashbackPercent ?? 0) / 100) * $purchaseAmount);
+      $paymentAmount = $purchase->payment_amount;
+      $cashbackPercent = $user->merchantDetail->cashback_percent ?? 0;
+      $cashbackPercentNormalized = $cashbackPercent / 100;
+      $cashbackCalculatedWith = $purchaseAmount;
+      if ($cashbackCalculationMethod === CashbackCalculationMethodEnum::PAYMENT_AMOUNT) {
+        $cashbackCalculatedWith = $paymentAmount;
+      }
+      $cashbackAmount = intval($cashbackPercentNormalized * $cashbackCalculatedWith);
+      $cashbackAmount = min($cashbackAmount, $user->merchantDetail->cashback_limit);
       $instagramId = $user->instagram_id;
 
       $tokenCode = $this->generateUniqueToken($instagramId);
@@ -53,6 +62,7 @@ class StoryService
         'amount' => $cashbackAmount,
         'percent' => $cashbackPercent,
         'coin_type' => CoinTypeEnum::LOCAL,
+        'cashback_calculation_method' => $cashbackCalculationMethod,
       ]);
       $tokenCashback->token()->associate($storyToken);
       $tokenCashback->save();
@@ -64,7 +74,7 @@ class StoryService
   {
     if ($customer->isMerchant()) {
       throw new BadRequestException('Merchant can\'t redeem token');
-    } 
+    }
     $encryptedToken = CryptoService::encrypt($token);
     $storyToken = StoryToken::where('code', $encryptedToken)->first();
     if (!$storyToken) {

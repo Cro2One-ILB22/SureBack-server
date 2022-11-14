@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CashbackCalculationMethodEnum;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,7 @@ class MerchantDetail extends Model
         'cashback_limit',
         'daily_token_limit',
         'is_active_generating_token',
+        'cashback_calculation_method',
     ];
 
     protected $appends = [
@@ -38,6 +40,7 @@ class MerchantDetail extends Model
         'cashback_limit' => 'integer',
         'daily_token_limit' => 'integer',
         'is_active_generating_token' => 'boolean',
+        'cashback_calculation_method' => CashbackCalculationMethodEnum::class,
     ];
 
     public function todaysTokenCount(): Attribute

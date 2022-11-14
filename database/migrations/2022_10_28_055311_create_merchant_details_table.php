@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CashbackCalculationMethodEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('cashback_limit')->nullable();
             $table->unsignedInteger('daily_token_limit')->nullable();
             $table->boolean('is_active_generating_token')->default(true);
+            $table->enum('cashback_calculation_method', CashbackCalculationMethodEnum::values())->default(CashbackCalculationMethodEnum::PURCHASE_AMOUNT->value);
             $table->timestamps();
         });
     }

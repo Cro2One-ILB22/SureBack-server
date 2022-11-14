@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CashbackCalculationMethodEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMerchantDetailRequest extends FormRequest
@@ -28,6 +29,7 @@ class UpdateMerchantDetailRequest extends FormRequest
             'cashback_limit' => 'numeric|nullable',
             'daily_token_limit' => 'numeric|nullable',
             'is_active_generating_token' => 'boolean',
+            'cashback_calculation_method' => 'string|in:' . implode(',', CashbackCalculationMethodEnum::values()),
         ];
     }
 }

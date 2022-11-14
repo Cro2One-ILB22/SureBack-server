@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CashbackCalculationMethodEnum;
 use App\Enums\CoinTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,7 @@ class TokenCashback extends Model
         'amount',
         'percent',
         'coin_type',
+        'cashback_calculation_method',
     ];
 
     protected $hidden = [
@@ -26,6 +28,7 @@ class TokenCashback extends Model
         'amount' => 'integer',
         'percent' => 'float',
         'coin_type' => CoinTypeEnum::class,
+        'cashback_calculation_method' => CashbackCalculationMethodEnum::class,
     ];
 
     public function token()
