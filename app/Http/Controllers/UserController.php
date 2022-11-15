@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\RoleEnum;
 use App\Http\Requests\UpdateMerchantDetailRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\MerchantDetail;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->userService = new UserService();
+    }
     /**
      * Display a listing of the resource.
      *
@@ -18,21 +23,21 @@ class UserController extends Controller
      */
     public function merchants()
     {
-        $userId = auth()->user()->id;
-        $merchants = User::whereHas('roles', function ($query) {
-            $query->where('slug', RoleEnum::MERCHANT);
-        })
-            ->whereHas('merchantCoins', function ($query) use ($userId) {
-                $query->where('customer_id', $userId);
-            })
-            ->with('merchantDetail', 'merchantCoins');
-
-        $name = 'name';
-        if (request()->has($name)) {
-            $merchants = $merchants->where($name, 'like', '%' . request()->$name . '%');
+        $rules = [
+            'is_favorite' => 'boolean',
+            'is_visited' => 'boolean',
+        ];
+        $validator = request()->validate($rules);
+        $params = request()->except(array_keys($rules));
+        $isFavorite = $validator['is_favorite'] ?? null;
+        $isVisited = $validator['is_visited'] ?? null;
+        try {
+            $merchants = $this->userService->getMerchants(auth()->user(), $params, $isFavorite, $isVisited)->paginate();
+        } catch (BadRequestException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], Response::HTTP_BAD_REQUEST);
         }
-
-        $merchants = $merchants->paginate();
 
         return response()->json($merchants);
     }
@@ -44,21 +49,21 @@ class UserController extends Controller
      */
     public function customers()
     {
-        $userId = auth()->user()->id;
-        $customers = User::whereHas('roles', function ($query) {
-            $query->where('slug', RoleEnum::CUSTOMER);
-        })
-            ->whereHas('customerCoins', function ($query) use ($userId) {
-                $query->where('merchant_id', $userId);
-            })
-            ->with('customerCoins');
-
-        $name = 'name';
-        if (request()->has($name)) {
-            $customers = $customers->where($name, 'like', '%' . request()->$name . '%');
+        $rules = [
+            'has_favorited_me' => 'boolean',
+            'has_visited' => 'boolean',
+        ];
+        $validator = request()->validate($rules);
+        $params = request()->except(array_keys($rules));
+        $hasFavoritedMe = $validator['has_favorited_me'] ?? null;
+        $hasVisited = $validator['has_visited'] ?? null;
+        try {
+            $customers = $this->userService->getCustomers(auth()->user(), $params, $hasFavoritedMe, $hasVisited)->paginate();
+        } catch (BadRequestException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], Response::HTTP_BAD_REQUEST);
         }
-
-        $customers = $customers->paginate();
 
         return response()->json($customers);
     }

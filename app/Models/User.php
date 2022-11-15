@@ -36,7 +36,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'story_tokens'
+        'story_tokens',
     ];
 
     /**
@@ -67,6 +67,16 @@ class User extends Authenticatable
     public function devices()
     {
         return $this->belongsToMany(Device::class, 'user_devices');
+    }
+
+    public function favoriteMerchantsAsCustomer()
+    {
+        return $this->belongsToMany(User::class, 'favorite_merchants', 'customer_id', 'merchant_id');
+    }
+
+    public function customersWhoFavoriteMe()
+    {
+        return $this->belongsToMany(User::class, 'favorite_merchants', 'merchant_id', 'customer_id');
     }
 
     public function notificationSubscriptions()
