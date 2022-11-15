@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             TransactionStatusSeeder::class,
             OtpFactorSeeder::class,
+            NotificationTopicSeeder::class,
             TransactionCategorySeeder::class,
             PaymentInstrumentSeeder::class,
             VariableCategorySeeder::class,

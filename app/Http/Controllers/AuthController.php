@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\DeviceService;
 use App\Services\InstagramService;
+use App\Services\NotificationService;
 use App\Services\OTPService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -83,7 +84,7 @@ class AuthController extends Controller
             $instagramService->getProfile($user->instagram_username);
 
             if ($user) {
-                $this->registerForNotification($user);
+                (new NotificationService())->registerForNotification($user);
                 if ($role === RegisterableRoleEnum::MERCHANT) {
                     $user->merchantDetail()->create();
                 }
@@ -110,6 +111,7 @@ class AuthController extends Controller
             if (!auth()->attempt($credentials)) {
                 return response()->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
             }
+            (new NotificationService())->registerForNotification(auth()->user());
 
             return $this->respondWithToken(auth()->user());
         });
@@ -202,16 +204,6 @@ class AuthController extends Controller
             'access_token' => $token->plainTextToken,
             'token_type' => 'bearer',
             'expires_in' => $token->accessToken->expires_at->diffInSeconds(now()),
-        ]);
-    }
-
-    private function registerForNotification($user)
-    {
-        $user->notificationSubscriptions()->firstOrCreate([
-            'user_id' => $user->id,
-            'slug' => 'general',
-        ], [
-            'name' => 'General',
         ]);
     }
 

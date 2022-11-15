@@ -19,7 +19,7 @@ return new class extends Migration
             $table->nullableMorphs('notification_subscriptionable', 'notification_subscriptionable_index');
             $table->string('slug');
             $table->string('name');
-            $table->boolean('active')->default(true);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

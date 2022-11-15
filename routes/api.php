@@ -68,4 +68,5 @@ Route::group([
 ], function ($router) {
     Route::put('', [UserController::class, 'update']);
     Route::put('merchant-detail', [UserController::class, 'updateMerchantDetail'])->middleware('abilities:merchant');
+    Route::get('notification', [NotificationController::class, 'index']);
 });

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\NotificationTopic;
+use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -46,7 +48,7 @@ class NotificationService
 
     $devices = $notificationSubscription->user->devices;
     DB::transaction(function () use ($title, $body, $data, $image, $devices, $notificationSubscription) {
-      if ($notificationSubscription && $notificationSubscription->active) {
+      if ($notificationSubscription && $notificationSubscription->is_active) {
         $data = array_merge($data, [
           'title' => $title,
           'body' => $body,
@@ -69,5 +71,28 @@ class NotificationService
         info('Cashback approved notification sent');
       }
     });
+  }
+
+  function registerForNotification(User $user)
+  {
+    $user->notificationSubscriptions()->firstOrCreate([
+      'user_id' => $user->id,
+      'slug' => 'general',
+    ], [
+      'name' => 'General',
+    ]);
+
+    $notificationTopics = NotificationTopic::all();
+    foreach ($notificationTopics as $notificationTopic) {
+      $notificationSubscription = $user->notificationSubscriptions()->firstOrCreate([
+        'user_id' => $user->id,
+        'slug' => $notificationTopic->slug,
+      ], [
+        'name' => $notificationTopic->name,
+      ]);
+
+      $notificationSubscription->notificationSubscriptionable()->associate($notificationTopic);
+      $notificationSubscription->save();
+    }
   }
 }

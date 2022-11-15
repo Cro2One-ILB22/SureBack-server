@@ -14,6 +14,18 @@ class NotificationSubscription extends Model
         'name',
     ];
 
+    protected $hidden = [
+        'updated_at',
+        'created_at',
+        'notification_subscriptionable_id',
+        'notification_subscriptionable_type',
+        'user_id',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
