@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MyEvent;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,4 +70,8 @@ Route::group([
     Route::put('', [UserController::class, 'update']);
     Route::put('merchant-detail', [UserController::class, 'updateMerchantDetail'])->middleware('abilities:merchant');
     Route::get('notification', [NotificationController::class, 'index']);
+});
+
+Route::get('send-event-test', function () {
+    return response()->json(broadcast(new MyEvent('Hello World')));
 });
