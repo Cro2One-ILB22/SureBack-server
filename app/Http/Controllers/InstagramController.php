@@ -232,6 +232,7 @@ class InstagramController extends Controller
 
         $tokens = $tokens
             ->with('story')
+            ->orderBy('id', 'desc')
             ->paginate();
         return response()->json($tokens);
     }

@@ -41,11 +41,14 @@ class StoryService
       $cashbackPercent = $user->merchantDetail->cashback_percent ?? 0;
       $cashbackPercentNormalized = $cashbackPercent / 100;
       $cashbackCalculatedWith = $purchaseAmount;
+      $cashbackLimit = $user->merchantDetail->cashback_limit;
       if ($cashbackCalculationMethod === CashbackCalculationMethodEnum::PAYMENT_AMOUNT) {
         $cashbackCalculatedWith = $paymentAmount;
       }
       $cashbackAmount = intval($cashbackPercentNormalized * $cashbackCalculatedWith);
-      $cashbackAmount = min($cashbackAmount, $user->merchantDetail->cashback_limit);
+      if ($cashbackLimit) {
+        $cashbackAmount = min($cashbackAmount, $cashbackLimit);
+      }
       $instagramId = $user->instagram_id;
 
       $tokenCode = $this->generateUniqueToken($instagramId);

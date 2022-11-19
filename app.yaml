@@ -19,6 +19,7 @@ handlers:
 env_variables:
   APP_KEY: $APP_KEY
   APP_STORAGE: /tmp
+  APP_LOG: errorlog
   VIEW_COMPILED_PATH: /tmp
   DB_CONNECTION: $DB_CONNECTION
   DB_HOST: $DB_HOST

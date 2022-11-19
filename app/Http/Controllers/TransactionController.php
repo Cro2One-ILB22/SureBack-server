@@ -49,6 +49,7 @@ class TransactionController extends Controller
         }
 
         $transactions = $transactions->with('status', 'category', 'paymentInstrument')
+            ->orderBy('id', 'desc')
             ->paginate()
             ->through(function ($transaction) {
                 return [
