@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StoryApprovalStatusEnum;
 use App\Http\Requests\ApproveCustomerStoryRequest;
 use App\Http\Requests\GenerateTokenRequest;
 use App\Http\Requests\QRScanRequest;
@@ -117,7 +118,7 @@ class InstagramController extends Controller
         }
     }
 
-    public function story()
+    public function myMentionedStories()
     {
         $storyId = request()->validate([
             'story_id' => 'required',
@@ -235,5 +236,71 @@ class InstagramController extends Controller
             ->orderBy('id', 'desc')
             ->paginate();
         return response()->json($tokens);
+    }
+
+    function story()
+    {
+        $user = auth()->user();
+        $request = request()->validate([
+            'customer' => 'integer',
+            'expired' => 'boolean',
+            'submitted' => 'boolean',
+            'approved' => 'boolean',
+        ]);
+
+        if ($user->isMerchant()) {
+            $stories = CustomerStory::whereHas('token', function ($token) use ($user) {
+                $token->whereHas('purchase', function ($purchase) use ($user) {
+                    $purchase->where('merchant_id', $user->id);
+                });
+            });
+
+            if (array_key_exists('customer', $request)) {
+                $stories = $stories->where('customer_id', $request['customer']);
+            }
+        } else {
+            $customerId = $user->id;
+            $stories = CustomerStory::where('customer_id', $customerId);
+        }
+
+        if (array_key_exists('expired', $request)) {
+            $expired = $request['expired'];
+
+            if ($expired == 0) {
+                $stories = $stories->whereHas('token', function ($token) {
+                    $token->where('expires_at', '>', now());
+                });
+            } else if ($expired == 1) {
+                $stories = $stories->whereHas('token', function ($token) {
+                    $token->where('expires_at', '<=', now());
+                });
+            }
+        }
+
+        if (array_key_exists('submitted', $request)) {
+            $submitted = $request['submitted'];
+
+            if ($submitted == 0) {
+                $stories = $stories->whereNull('submitted_at');
+            } else if ($submitted == 1) {
+                $stories = $stories->whereNotNull('submitted_at');
+            }
+        }
+
+        if (array_key_exists('approved', $request)) {
+            $approved = $request['approved'];
+
+            if ($approved == 0) {
+                $stories = $stories->where('approval_status', StoryApprovalStatusEnum::REJECTED);
+            } else if ($approved == 1) {
+                $stories = $stories->where('approval_status', StoryApprovalStatusEnum::APPROVED);
+            }
+        }
+
+        $stories = $stories
+            ->with('token')
+            ->orderBy('id', 'desc')
+            ->paginate();
+        return response()->json($stories);
     }
 }

@@ -37,7 +37,7 @@ Route::group([
     Route::post('token/generate', [InstagramController::class, 'generateToken'])->middleware('abilities:merchant');
     Route::post('token/redeem', [InstagramController::class, 'redeemToken'])->middleware('abilities:customer');
     Route::get('token', [InstagramController::class, 'storyToken']);
-    Route::get('story', [InstagramController::class, 'story'])->middleware('abilities:customer');
+    Route::get('story', [InstagramController::class, 'myMentionedStories'])->middleware('abilities:customer');
     Route::post('story/submit', [InstagramController::class, 'submitStory'])->middleware('abilities:customer');
     Route::put('story/approval', [InstagramController::class, 'approveStory'])->middleware('abilities:merchant');
 });
@@ -61,6 +61,7 @@ Route::group([
     'prefix' => 'customer'
 ], function ($router) {
     Route::get('', [UserController::class, 'customers']);
+    Route::get('story', [InstagramController::class, 'story']);
 });
 
 Route::group([
