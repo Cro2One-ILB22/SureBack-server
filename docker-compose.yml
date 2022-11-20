@@ -1,98 +1,84 @@
 version: "3"
 
-x-common-variables:
-  &common-variables
-  DB_CONNECTION: "${DB_CONNECTION:-mysql}"
-  DB_HOST: "${DB_HOST:-mysql}"
-  DB_PORT: "${DB_PORT:-3306}"
-  DB_DATABASE: "${DB_DATABASE:-sail}"
-  DB_USERNAME: "${DB_USERNAME:-sail}"
-  DB_PASSWORD: "${DB_PASSWORD:-password}"
-  REDIS_HOST: "${REDIS_HOST:-redis}"
-  REDIS_PASSWORD: "${REDIS_PASSWORD:-null}"
-  REDIS_PORT: "${REDIS_PORT:-6379}"
-  MAIL_MAILER: "${MAIL_MAILER:-smtp}"
-  MAIL_HOST: "${MAIL_HOST:-mailhog}"
-  MAIL_PORT: "${MAIL_PORT:-1025}"
-  MAIL_USERNAME: "${MAIL_USERNAME:-null}"
-  MAIL_PASSWORD: "${MAIL_PASSWORD:-null}"
-  MAIL_ENCRYPTION: "${MAIL_ENCRYPTION:-null}"
-  MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS}"
-  MAIL_FROM_NAME: "${MAIL_FROM_NAME}"
-  PUSHER_APP_ID: "${PUSHER_APP_ID}"
-  PUSHER_APP_KEY: "${PUSHER_APP_KEY}"
-  PUSHER_APP_SECRET: "${PUSHER_APP_SECRET}"
-  PUSHER_APP_CLUSTER: "${PUSHER_APP_CLUSTER:-mt1}"
-  RABBITMQ_HOST: "${RABBITMQ_HOST}"
-  RABBITMQ_PORT: "${RABBITMQ_PORT:-5672}"
-  RABBITMQ_USER: "${RABBITMQ_USER}"
-  RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
-  RABBITMQ_VHOST: "${RABBITMQ_VHOST}"
-  FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID}"
-  FIREBASE_SERVER_KEY: "${FIREBASE_SERVER_KEY}"
-  FIREBASE_SENDER_ID: "${FIREBASE_SENDER_ID}"
-  CODE_CIPHERING: "${CODE_CIPHERING}"
-  CODE_DIGEST: "${CODE_DIGEST}"
-  CODE_ENCRYPTION_IV: "${CODE_ENCRYPTION_IV}"
-
 networks:
-  main:
-    driver: bridge
+    sureback:
+        driver: bridge
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: app
-    tty: true
-    restart: unless-stopped
-    working_dir: /var/www
-    environment:
-      <<: *common-variables
-    networks:
-      - main
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./:/var/www
-      # - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zzz_custom.ini
-  webserver:
-    image: nginx:1.22.1-alpine
-    container_name: webserver
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d/
-      # - ./nginx/ssl:/etc/nginx/ssl
-      - ./nginx/logs:/var/log/nginx
-      - ./:/var/www
-    networks:
-      - main
-    environment:
-      <<: *common-variables
-    depends_on:
-      - app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    # We need to run the FPM container for our application
+    sureback.fpm: &fpm
+        platform: linux/amd64
+        build:
+            context: .
+            target: fpm_server
+        image: mfahmialkautsar/sureback-fpm_server
+        restart: always
+        # We can override any env values here.
+        # By default the .env in the project root will be loaded as the environment for all containers
+        environment:
+            APP_ENV: "${APP_ENV:-production}"
+        env_file:
+            - .env
+        # Mount the codebase, so any code changes we make will be propagated to the running application
+        volumes:
+            # Here we mount in our codebase so any changes are immediately reflected into the container
+            - ".:/opt/apps/sureback"
+        networks:
+            - sureback
 
-  queue-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: queue-worker
-    tty: true
-    restart: unless-stopped
-    working_dir: /var/www
-    environment:
-      <<: *common-variables
-    networks:
-      - main
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./:/var/www
-      # - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zzz_custom.ini
-    command: php artisan queue:work --tries=3 --timeout=90
+    # Run the web server container for static content, and proxying to our FPM container
+    sureback.web:
+        platform: linux/amd64
+        build:
+            context: .
+            target: web_server
+        image: mfahmialkautsar/sureback-web_server
+        restart: always
+        # Expose our application port (80) through a port on our local machine (8080)
+        ports:
+            - "8080:80"
+        environment:
+            # We need to pass in the new FPM hst as the name of the fpm container on port 9000
+            FPM_HOST: "sureback.fpm:9000"
+        # Mount the public directory into the container so we can serve any static files directly when they change
+        volumes:
+            # Here we mount in our codebase so any changes are immediately reflected into the container
+            - "./public:/opt/apps/sureback/public"
+        networks:
+            - sureback
+        depends_on:
+            - sureback.fpm
+
+    # Queue Worker
+    sureback.queue:
+        <<: *fpm
+        command: "php artisan queue:work --tries=3"
+    # Run the Laravel Scheduler
+    # sureback.cron:
+    #     build:
+    #         context: .
+    #         target: cron
+    #     image: mfahmialkautsar/sureback-cron
+    #     # Here we mount in our codebase so any changes are immediately reflected into the container
+    #     volumes:
+    #         # Here we mount in our codebase so any changes are immediately reflected into the container
+    #         - '.:/opt/apps/sureback'
+    #     networks:
+    #         - sureback
+    # # Run the frontend, and file watcher in a container, so any changes are immediately compiled and servable
+    # sureback.frontend:
+    #     build:
+    #         context: .
+    #         target: frontend
+    #     # Override the default CMD, so we can watch changes to frontend files, and re-transpile them.
+    #     command: ["npm", "run", "watch"]
+    #     image: mfahmialkautsar/sureback-frontend
+    #     volumes:
+    #         # Here we mount in our codebase so any changes are immediately reflected into the container
+    #         - '.:/opt/apps/sureback'
+    #         # Add node_modeules as singular volume.
+    #         # This prevents our local node_modules from being propagated into the container,
+    #         # So the node_modules can be compiled for each of the different architectures (Local, Image)
+    #         - '/opt/app/node_modules/'
+    #     networks:
+    #         - sureback
