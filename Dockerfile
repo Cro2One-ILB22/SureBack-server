@@ -81,10 +81,10 @@ RUN composer install --no-dev --prefer-dist
 # It contains all the Composer packages,
 # and just the basic CLI "stuff" in order for us to run commands,
 # be that queues, migrations, tinker etc.
-FROM php:8.1.12-alpine as cli
+FROM php:8.1.12 as cli
 
 # We need to declare that we want to use the args in this build step
-ARG PHP_EXTS
+# ARG PHP_EXTS
 # ARG PHP_PECL_EXTS
 
 WORKDIR /opt/apps/sureback
@@ -92,12 +92,27 @@ WORKDIR /opt/apps/sureback
 # We need to install some requirements into our image,
 # used to compile our PHP extensions, as well as install all the extensions themselves.
 # You can see a list of required extensions for Laravel here: https://laravel.com/docs/8.x/deployment#server-requirements
-RUN apk add --virtual build-dependencies --no-cache ${PHPIZE_DEPS} openssl ca-certificates libxml2-dev oniguruma-dev postgresql-dev && \
-    docker-php-ext-install -j$(nproc) ${PHP_EXTS} && \
-    # pecl install ${PHP_PECL_EXTS} && \
-    # docker-php-ext-enable ${PHP_PECL_EXTS} && \
-    apk del build-dependencies && \
-    apk add --no-cache libpq
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    locales \
+    zip \
+    jpegoptim optipng pngquant gifsicle \
+    vim \
+    unzip \
+    git \
+    curl \
+    libpq-dev
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install extensions
+RUN docker-php-ext-install pdo_mysql pdo_pgsql exif pcntl
+RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg
+RUN docker-php-ext-install gd
 
 # Next we have to copy in our code base from our initial build which we installed in the previous stage
 COPY --from=composer_base /opt/apps/sureback /opt/apps/sureback
@@ -105,25 +120,40 @@ COPY --from=composer_base /opt/apps/sureback /opt/apps/sureback
 
 
 # We need a stage which contains FPM to actually run and process requests to our PHP application.
-FROM php:8.1.12-fpm-alpine as fpm_server
+FROM php:8.1.12-fpm as fpm_server
 
 # We need to declare that we want to use the args in this build step
-ARG PHP_EXTS
+# ARG PHP_EXTS
 # ARG PHP_PECL_EXTS
 
 WORKDIR /opt/apps/sureback
 
-RUN apk add --virtual build-dependencies --no-cache ${PHPIZE_DEPS} openssl ca-certificates libxml2-dev oniguruma-dev postgresql-dev && \
-    docker-php-ext-install -j$(nproc) ${PHP_EXTS} && \
-    # pecl install ${PHP_PECL_EXTS} && \
-    # docker-php-ext-enable ${PHP_PECL_EXTS} && \
-    apk del build-dependencies && \
-    apk add --no-cache libpq
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    locales \
+    zip \
+    jpegoptim optipng pngquant gifsicle \
+    vim \
+    unzip \
+    git \
+    curl \
+    libpq-dev
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install extensions
+RUN docker-php-ext-install pdo_mysql pdo_pgsql exif pcntl
+RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg
+RUN docker-php-ext-install gd
 
 # As FPM uses the www-data user when running our application,
 # we need to make sure that we also use that user when starting up,
 # so our user "owns" the application when running
-USER  www-data
+# USER  www-data
 
 # We have to copy in our code base from our initial build which we installed in the previous stage
 COPY --from=composer_base --chown=www-data /opt/apps/sureback /opt/apps/sureback
