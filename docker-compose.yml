@@ -15,8 +15,6 @@ services:
         restart: always
         # We can override any env values here.
         # By default the .env in the project root will be loaded as the environment for all containers
-        environment:
-            APP_ENV: "${APP_ENV:-production}"
         env_file:
             - .env
         # Mount the codebase, so any code changes we make will be propagated to the running application
@@ -32,6 +30,10 @@ services:
         build:
             context: .
             target: web_server
+            args:
+                SSL_CERT: "${SSL_CERT}"
+                SSL_KEY: "${SSL_KEY}"
+            #     TEMP_FILE_PATH: "${TEMP_FILE_PATH}"
         image: mfahmialkautsar/sureback-web_server
         restart: always
         # Expose our application port (80) through a port on our local machine (8080)
@@ -39,7 +41,9 @@ services:
             - "8080:80"
         environment:
             # We need to pass in the new FPM hst as the name of the fpm container on port 9000
+            APP_ENV: "${APP_ENV:-production}"
             FPM_HOST: "sureback.fpm:9000"
+            # TEMP_FILE_PATH: "${TEMP_FILE_PATH}"
         # Mount the public directory into the container so we can serve any static files directly when they change
         volumes:
             # Here we mount in our codebase so any changes are immediately reflected into the container

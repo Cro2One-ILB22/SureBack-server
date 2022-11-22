@@ -170,10 +170,20 @@ RUN php artisan event:cache && \
 # as well as serve any static content.
 FROM nginx:1.22.1-alpine as web_server
 
+# ARG TEMP_FILE_PATH
+ARG SSL_CERT
+ARG SSL_KEY
+ENV SSL_CERT_PATH=/etc/ssl/certs/certificate.crt
+ENV SSL_KEY_PATH=/etc/ssl/private/private.key
+
 WORKDIR /opt/apps/sureback
 
 # We need to add our NGINX template to the container for startup,
 # and configuration.
+RUN echo "${SSL_CERT}" > ${SSL_CERT_PATH} && \
+    echo "${SSL_KEY}" > ${SSL_KEY_PATH}
+
+# COPY storage/tmp/${TEMP_FILE_PATH} /${TEMP_FILE_PATH}
 COPY nginx/default.conf /etc/nginx/templates/default.conf.template
 
 # Copy in ONLY the public directory of our project.
