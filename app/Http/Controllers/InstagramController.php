@@ -242,10 +242,11 @@ class InstagramController extends Controller
     {
         $user = auth()->user();
         $request = request()->validate([
-            'customer' => 'integer',
+            'customer_id' => 'integer',
             'expired' => 'boolean',
             'submitted' => 'boolean',
             'approved' => 'boolean',
+            'assessed' => 'boolean',
         ]);
 
         if ($user->isMerchant()) {
@@ -255,8 +256,8 @@ class InstagramController extends Controller
                 });
             });
 
-            if (array_key_exists('customer', $request)) {
-                $stories = $stories->where('customer_id', $request['customer']);
+            if (array_key_exists('customer_id', $request)) {
+                $stories = $stories->where('customer_id', $request['customer_id']);
             }
         } else {
             $customerId = $user->id;
@@ -297,8 +298,18 @@ class InstagramController extends Controller
             }
         }
 
+        if (array_key_exists('assessed', $request)) {
+            $assessed = $request['assessed'];
+
+            if ($assessed == 0) {
+                $stories = $stories->whereNull('assessed_at');
+            } else if ($assessed == 1) {
+                $stories = $stories->whereNotNull('assessed_at');
+            }
+        }
+
         $stories = $stories
-            ->with('token')
+            ->with(['token', 'customer'])
             ->orderBy('id', 'desc')
             ->paginate();
         return response()->json($stories);
