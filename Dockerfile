@@ -5,6 +5,7 @@
 # You can see a list of required extensions for Laravel here: https://laravel.com/docs/8.x/deployment#server-requirements
 ARG PHP_EXTS="bcmath ctype fileinfo mbstring pdo pdo_mysql pdo_pgsql dom pcntl sockets"
 # ARG PHP_PECL_EXTS="redis"
+ARG APP_DIR="/var/www"
 
 
 # We need to build the Composer base to reuse packages we've installed
@@ -13,18 +14,19 @@ FROM composer:2.4.4 as composer_base
 # We need to declare that we want to use the args in this build step
 ARG PHP_EXTS
 # ARG PHP_PECL_EXTS
+ARG APP_DIR
 
 # First, create the application directory, and some auxilary directories for scripts and such
-RUN mkdir -p /opt/apps/sureback /opt/apps/sureback/bin
+RUN mkdir -p ${APP_DIR} ${APP_DIR}/bin
 
 # Next, set our working directory
-WORKDIR /opt/apps/sureback
+WORKDIR ${APP_DIR}
 
 # We need to create a composer group and user, and create a home directory for it, so we keep the rest of our image safe,
 # And not accidentally run malicious scripts
 RUN addgroup -S composer \
     && adduser -S composer -G composer \
-    && chown -R composer /opt/apps/sureback \
+    && chown -R composer ${APP_DIR} \
     && apk add --virtual build-dependencies --no-cache ${PHPIZE_DEPS} openssl ca-certificates libxml2-dev oniguruma-dev postgresql-dev \
     && docker-php-ext-install -j$(nproc) ${PHP_EXTS} \
     # && pecl install ${PHP_PECL_EXTS} \
@@ -65,10 +67,12 @@ RUN composer install --no-dev --prefer-dist
 # # and run a production compile
 # FROM node:14 as frontend
 
-# # We need to copy in the Laravel files to make everything is available to our frontend compilation
-# COPY --from=composer_base /opt/apps/sureback /opt/apps/sureback
+# ARG APP_DIR
 
-# WORKDIR /opt/apps/sureback
+# # We need to copy in the Laravel files to make everything is available to our frontend compilation
+# COPY --from=composer_base ${APP_DIR} ${APP_DIR}
+
+# WORKDIR ${APP_DIR}
 
 # # We want to install all the NPM packages,
 # # and compile the MIX bundle for production
@@ -86,8 +90,9 @@ FROM php:8.1.12 as cli
 # We need to declare that we want to use the args in this build step
 # ARG PHP_EXTS
 # ARG PHP_PECL_EXTS
+ARG APP_DIR
 
-WORKDIR /opt/apps/sureback
+WORKDIR ${APP_DIR}
 
 # We need to install some requirements into our image,
 # used to compile our PHP extensions, as well as install all the extensions themselves.
@@ -115,8 +120,8 @@ RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg
 RUN docker-php-ext-install gd
 
 # Next we have to copy in our code base from our initial build which we installed in the previous stage
-COPY --from=composer_base /opt/apps/sureback /opt/apps/sureback
-# COPY --from=frontend /opt/apps/sureback/public /opt/apps/sureback/public
+COPY --from=composer_base ${APP_DIR} ${APP_DIR}
+# COPY --from=frontend ${APP_DIR}/public ${APP_DIR}/public
 
 
 # We need a stage which contains FPM to actually run and process requests to our PHP application.
@@ -125,8 +130,9 @@ FROM php:8.1.12-fpm as fpm_server
 # We need to declare that we want to use the args in this build step
 # ARG PHP_EXTS
 # ARG PHP_PECL_EXTS
+ARG APP_DIR
 
-WORKDIR /opt/apps/sureback
+WORKDIR ${APP_DIR}
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -156,8 +162,8 @@ RUN docker-php-ext-install gd
 # USER  www-data
 
 # We have to copy in our code base from our initial build which we installed in the previous stage
-COPY --from=composer_base --chown=www-data /opt/apps/sureback /opt/apps/sureback
-# COPY --from=frontend --chown=www-data /opt/apps/sureback/public /opt/apps/sureback/public
+COPY --from=composer_base --chown=www-data ${APP_DIR} ${APP_DIR}
+# COPY --from=frontend --chown=www-data ${APP_DIR}/public ${APP_DIR}/public
 
 # We want to cache the event, routes, and views so we don't try to write them when we are in Kubernetes.
 # Docker builds should be as immutable as possible, and this removes a lot of the writing of the live application.
@@ -173,10 +179,12 @@ FROM nginx:1.22.1-alpine as web_server
 # ARG TEMP_FILE_PATH
 ARG SSL_CERT
 ARG SSL_KEY
+ARG APP_DIR
 ENV SSL_CERT_PATH=/etc/ssl/certs/certificate.crt
 ENV SSL_KEY_PATH=/etc/ssl/private/private.key
+ENV APP_DIR=${APP_DIR}
 
-WORKDIR /opt/apps/sureback
+WORKDIR ${APP_DIR}
 
 # We need to add our NGINX template to the container for startup,
 # and configuration.
@@ -188,7 +196,7 @@ COPY nginx/default.conf /etc/nginx/templates/default.conf.template
 
 # Copy in ONLY the public directory of our project.
 # This is where all the static assets will live, which nginx will serve for us.
-# COPY --from=frontend /opt/apps/sureback/public /opt/apps/sureback/public
+# COPY --from=frontend ${APP_DIR}/public ${APP_DIR}/public
 
 
 # We need a CRON container to the Laravel Scheduler.
@@ -196,12 +204,14 @@ COPY nginx/default.conf /etc/nginx/templates/default.conf.template
 # as we only need to override the CMD which the container starts with to point at cron
 FROM cli as cron
 
-WORKDIR /opt/apps/sureback
+ARG APP_DIR
+
+WORKDIR ${APP_DIR}
 
 # We want to create a laravel.cron file with Laravel cron settings, which we can import into crontab,
 # and run crond as the primary command in the forground
 RUN touch laravel.cron && \
-    echo "* * * * * cd /opt/apps/sureback && php artisan schedule:run" >> laravel.cron && \
+    echo "* * * * * cd $APP_DIR && php artisan schedule:run" >> laravel.cron && \
     crontab laravel.cron
 
 CMD ["crond", "-l", "2", "-f"]

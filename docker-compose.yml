@@ -11,6 +11,8 @@ services:
         build:
             context: .
             target: fpm_server
+            args:
+                APP_DIR: "${APP_DIR:-/var/www}"
         image: mfahmialkautsar/sureback-fpm_server
         restart: always
         # We can override any env values here.
@@ -20,7 +22,7 @@ services:
         # Mount the codebase, so any code changes we make will be propagated to the running application
         volumes:
             # Here we mount in our codebase so any changes are immediately reflected into the container
-            - ".:/opt/apps/sureback"
+            - ".:${APP_DIR:-/var/www}"
         networks:
             - sureback
 
@@ -31,6 +33,7 @@ services:
             context: .
             target: web_server
             args:
+                APP_DIR: "${APP_DIR:-/var/www}"
                 SSL_CERT: "${SSL_CERT}"
                 SSL_KEY: "${SSL_KEY}"
             #     TEMP_FILE_PATH: "${TEMP_FILE_PATH}"
