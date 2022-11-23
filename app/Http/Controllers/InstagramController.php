@@ -243,6 +243,9 @@ class InstagramController extends Controller
         $user = auth()->user();
         $request = request()->validate([
             'customer_id' => 'integer',
+            'merchant_id' => 'integer',
+            'customer_name' => 'string|nullable',
+            'merchant_name' => 'string|nullable',
             'expired' => 'boolean',
             'submitted' => 'boolean',
             'approved' => 'boolean',
@@ -255,13 +258,51 @@ class InstagramController extends Controller
                     $purchase->where('merchant_id', $user->id);
                 });
             });
-
-            if (array_key_exists('customer_id', $request)) {
-                $stories = $stories->where('customer_id', $request['customer_id']);
-            }
         } else {
             $customerId = $user->id;
             $stories = CustomerStory::where('customer_id', $customerId);
+        }
+
+        if (array_key_exists('customer_id', $request)) {
+            if ($user->isCustomer()) {
+                return response()->json(['message' => 'You are not allowed to see other customer\'s story'], Response::HTTP_UNAUTHORIZED);
+            }
+            $stories = $stories->where('customer_id', $request['customer_id']);
+        }
+
+        if (array_key_exists('merchant_id', $request)) {
+            if ($user->isMerchant()) {
+                return response()->json(['message' => 'You are not allowed to see other merchants customers\' story'], Response::HTTP_UNAUTHORIZED);
+            }
+            $stories = $stories->whereHas('token', function ($token) use ($request) {
+                $token->whereHas('purchase', function ($purchase) use ($request) {
+                    $purchase->where('merchant_id', $request['merchant_id']);
+                });
+            });
+        }
+
+        if (array_key_exists('customer_name', $request)) {
+            if ($user->isCustomer()) {
+                return response()->json(['message' => 'You are not allowed to see other customer\'s story'], Response::HTTP_UNAUTHORIZED);
+            }
+            $customerName = $request['customer_name'];
+            $stories = $stories->whereHas('customer', function ($customer) use ($customerName) {
+                $customer->whereRaw('LOWER(name) LIKE ?', ["%$customerName%"]);
+            });
+        }
+
+        if (array_key_exists('merchant_name', $request)) {
+            if ($user->isMerchant()) {
+                return response()->json(['message' => 'You are not allowed to see other merchants customers\' story'], Response::HTTP_UNAUTHORIZED);
+            }
+            $merchantName = $request['merchant_name'];
+            $stories = $stories->whereHas('token', function ($token) use ($merchantName) {
+                $token->whereHas('purchase', function ($purchase) use ($merchantName) {
+                    $purchase->whereHas('merchant', function ($merchant) use ($merchantName) {
+                        $merchant->whereRaw('LOWER(name) LIKE ?', ["%$merchantName%"]);
+                    });
+                });
+            });
         }
 
         if (array_key_exists('expired', $request)) {
