@@ -13,7 +13,7 @@ services:
             target: fpm_server
             args:
                 APP_DIR: "${APP_DIR:-/var/www}"
-        image: mfahmialkautsar/sureback-fpm_server
+        image: "${FPM_IMAGE:-mfahmialkautsar/sureback-fpm_server}"
         restart: always
         # We can override any env values here.
         # By default the .env in the project root will be loaded as the environment for all containers
@@ -37,7 +37,7 @@ services:
                 SSL_CERT: "${SSL_CERT}"
                 SSL_KEY: "${SSL_KEY}"
             #     TEMP_FILE_PATH: "${TEMP_FILE_PATH}"
-        image: mfahmialkautsar/sureback-web_server
+        image: "${WEBSERVER_IMAGE:-mfahmialkautsar/sureback-web_server}"
         restart: always
         # Expose our application port (80) through a port on our local machine (8080)
         ports:
@@ -65,7 +65,7 @@ services:
     #     build:
     #         context: .
     #         target: cron
-    #     image: mfahmialkautsar/sureback-cron
+    #     image: "${CRON_IMAGE:-mfahmialkautsar/sureback-cron}"
     #     # Here we mount in our codebase so any changes are immediately reflected into the container
     #     volumes:
     #         # Here we mount in our codebase so any changes are immediately reflected into the container
@@ -79,7 +79,7 @@ services:
     #         target: frontend
     #     # Override the default CMD, so we can watch changes to frontend files, and re-transpile them.
     #     command: ["npm", "run", "watch"]
-    #     image: mfahmialkautsar/sureback-frontend
+    #     image: "${FRONTEND_IMAGE:-mfahmialkautsar/sureback-frontend}"
     #     volumes:
     #         # Here we mount in our codebase so any changes are immediately reflected into the container
     #         - '.:/opt/apps/sureback'

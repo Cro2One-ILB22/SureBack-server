@@ -7,8 +7,16 @@ on:
       - completed
 
 jobs:
+  get-cloud-service:
+    runs-on: ubuntu-latest
+    outputs:
+      cloud-service: ${{ steps.cloud-service.outputs }}
+    steps:
+      - run: echo ${{ secrets.CLOUD_SERVICE }}
+
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ needs.get-cloud-service.outputs.cloud-service == 'GAE' }}
     steps:
       - uses: actions/checkout@v3
       - name: Create .env file
