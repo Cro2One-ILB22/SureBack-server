@@ -15,8 +15,8 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
       APP_DIR: ${{ secrets.APP_DIR }}
-      SSL_CERT: ${{ secrets.SSL_CERT }}
-      SSL_KEY: ${{ secrets.SSL_KEY }}
+      # SSL_CERT: ${{ secrets.SSL_CERT }}
+      # SSL_KEY: ${{ secrets.SSL_KEY }}
       FPM_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-fpm_server
       WEBSERVER_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-web_server
       CRON_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-cron
@@ -26,8 +26,8 @@ jobs:
       - name: "Create .env file"
         run: |
           echo APP_DIR='"${{ secrets.APP_DIR }}"' >> .env
-          echo SSL_CERT='"${{ secrets.SSL_CERT }}"' >> .env
-          echo SSL_KEY='"${{ secrets.SSL_KEY }}"' >> .env
+        # echo SSL_CERT='"${{ secrets.SSL_CERT }}"' >> .env
+        # echo SSL_KEY='"${{ secrets.SSL_KEY }}"' >> .env
       - name: "Create Google SA json"
         run: |
           mkdir -p storage/app/google

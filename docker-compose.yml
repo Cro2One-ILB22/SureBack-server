@@ -34,9 +34,9 @@ services:
             target: web_server
             args:
                 APP_DIR: "${APP_DIR:-/var/www}"
-                SSL_CERT: "${SSL_CERT}"
-                SSL_KEY: "${SSL_KEY}"
-            #     TEMP_FILE_PATH: "${TEMP_FILE_PATH}"
+                # SSL_CERT: "${SSL_CERT}"
+                # SSL_KEY: "${SSL_KEY}"
+                # TEMP_FILE_PATH: "${TEMP_FILE_PATH}"
         image: "${WEBSERVER_IMAGE:-mfahmialkautsar/sureback-web_server}"
         restart: always
         # Expose our application port (80) through a port on our local machine (8080)
