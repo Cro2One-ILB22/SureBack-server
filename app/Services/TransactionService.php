@@ -145,7 +145,7 @@ class TransactionService
   function payStoryToken(StoryToken $token)
   {
     DB::transaction(function () use ($token) {
-      $amount = $token->tokenCashback->amount;
+      $amount = $token->cashback->amount;
 
       $transactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::SUCCESS)->first();
       $paymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first();
@@ -184,7 +184,7 @@ class TransactionService
   {
     $user = $story->customer;
     $merchant = $story->token->purchase->merchant;
-    $cashbackAmount = $story->token->tokenCashback->amount;
+    $cashbackAmount = $story->token->cashback->amount;
     DB::transaction(function () use ($merchant, $user, $story, $cashbackAmount) {
       $this->confirmCustomerCashback($story);
       $this->payStoryToken($story->token);
@@ -209,7 +209,7 @@ class TransactionService
       $customerTransactionStatus = TransactionStatus::where('slug', TransactionStatusEnum::CREATED)->first();
       $customerPaymentInstrument = PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first();
       $customerCashbackTransaction = new Transaction([
-        'amount' => $story->token->tokenCashback->amount,
+        'amount' => $story->token->cashback->amount,
         'accounting_entry' => AccountingEntryEnum::CREDIT,
       ]);
       $customerCashbackTransaction->category()->associate($customerTransactionCategory);

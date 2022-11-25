@@ -66,7 +66,7 @@ class StoryToken extends Model
         return $this->hasOne(CustomerStory::class);
     }
 
-    public function tokenCashback()
+    public function cashback()
     {
         return $this->hasOne(TokenCashback::class, 'token_id');
     }

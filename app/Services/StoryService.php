@@ -61,14 +61,14 @@ class StoryService
       $storyToken->purchase()->associate($purchase);
       $storyToken->save();
 
-      $tokenCashback = new TokenCashback([
+      $cashback = new TokenCashback([
         'amount' => $cashbackAmount,
         'percent' => $cashbackPercent,
         'coin_type' => CoinTypeEnum::LOCAL,
         'cashback_calculation_method' => $cashbackCalculationMethod,
       ]);
-      $tokenCashback->token()->associate($storyToken);
-      $tokenCashback->save();
+      $cashback->token()->associate($storyToken);
+      $cashback->save();
       return $storyToken;
     });
   }

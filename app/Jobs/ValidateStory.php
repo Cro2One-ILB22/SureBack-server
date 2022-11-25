@@ -53,7 +53,7 @@ class ValidateStory implements ShouldQueue
                     $transactionService->sendCashback($story);
                     $notificationService->sendAndSaveNotification(
                         'Cashback Approved',
-                        'You have received a cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
+                        'You have received a cashback of ' . $story->token->cashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
                         $generalNotificationSubscription,
                     );
                 } else if ($approvalStatus === StoryApprovalStatusEnum::REJECTED) {
@@ -61,7 +61,7 @@ class ValidateStory implements ShouldQueue
                     $story->cashback->transaction->save();
                     $notificationService->sendAndSaveNotification(
                         'Cashback Rejected',
-                        'Your cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected' . ($story->note ? ' because of ' . '"' . $story->note . '"' : '') . '.',
+                        'Your cashback of ' . $story->token->cashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected' . ($story->note ? ' because of ' . '"' . $story->note . '"' : '') . '.',
                         $generalNotificationSubscription,
                     );
                 }
@@ -70,7 +70,7 @@ class ValidateStory implements ShouldQueue
             info('Story validation failed');
             $notificationService->sendAndSaveNotification(
                 'Cashback Rejected',
-                'Your cashback of ' . $story->token->tokenCashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected because your story could not be found.',
+                'Your cashback of ' . $story->token->cashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name . ' has been rejected because your story could not be found.',
                 $generalNotificationSubscription,
             );
         }
