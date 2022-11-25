@@ -1,5 +1,7 @@
 <?php
 
+use App\Broadcasting\QRScanPurchaseChannel;
+use App\Broadcasting\QRScanRequestChannel;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -16,3 +18,7 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+Broadcast::channel('qr-scan.request.{customerId}', QRScanRequestChannel::class);
+
+Broadcast::channel('qr-scan.purchase.{merchantId}.{customerId}', QRScanPurchaseChannel::class);

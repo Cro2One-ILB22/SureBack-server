@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\MyEvent;
+use App\Events\QRScanRequestEvent;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -73,6 +74,48 @@ Route::group([
     Route::get('notification', [NotificationController::class, 'index']);
 });
 
-Route::get('send-event-test', function () {
-    return response()->json(broadcast(new MyEvent('Hello World')));
+Route::group([
+    'middleware' => 'auth:sanctum',
+    'prefix' => 'broadcasting'
+], function ($router) {
+    Route::post('qr/response', [BroadcastingController::class, 'qrScanResponse'])->middleware('abilities:merchant');
+    Route::post('qr/purchase', [BroadcastingController::class, 'qrScanPurchase'])->middleware('abilities:customer');
 });
+
+Route::group(
+    [
+        'middleware' => 'auth:sanctum',
+        'prefix' => 'test'
+    ],
+    function ($router) {
+        Route::get('', function () {
+            // ValidateStory::dispatch([
+            //     'instagram_story_id' => '2966942962107232846',
+            // ]);
+
+            // $pool = Pool::create();
+            // $pool->add(function () {
+            //     return Http::acceptJson()
+            //         ->get('http://localhost:8001');
+            // })->then(function ($output) {
+            // })->catch(function (Throwable $exception) {
+            //     // Handle exception
+            // });
+
+            return response()->json([
+                'message' => 'Hello World',
+            ]);
+        });
+
+        Route::get('event', function () {
+            return response()->json(event(new MyEvent('Hello World')));
+        });
+
+        Route::post('event/qr-scan', function () {
+            broadcast(new QRScanRequestEvent(auth()->user()->id, request()->customer_id));
+            return response()->json([
+                'message' => 'Success',
+            ]);
+        });
+    }
+);

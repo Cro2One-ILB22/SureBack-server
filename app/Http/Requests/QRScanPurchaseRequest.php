@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Rules\Customer;
+use App\Rules\Merchant;
 use Illuminate\Foundation\Http\FormRequest;
 
-class QRScanRequest extends FormRequest
+class QRScanPurchaseRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -15,10 +15,9 @@ class QRScanRequest extends FormRequest
     public function rules()
     {
         return [
-            'purchase_amount' => 'required|integer',
-            'customer_id' => [new Customer],
-            'used_coins' => 'integer|nullable',
-            'is_requesting_for_token' => 'boolean|nullable',
+            'merchant_id' => new Merchant,
+            'used_coins' => ['integer', 'nullable'],
+            'is_requesting_for_token' => ['boolean', 'nullable'],
         ];
     }
 

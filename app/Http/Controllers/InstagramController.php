@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StoryApprovalStatusEnum;
+use App\Events\QRScanPurchaseEvent;
 use App\Http\Requests\ApproveCustomerStoryRequest;
 use App\Http\Requests\GenerateTokenRequest;
 use App\Http\Requests\QRScanRequest;
@@ -97,6 +98,8 @@ class InstagramController extends Controller
 
                 return $purchase;
             });
+
+            broadcast(new QRScanPurchaseEvent($user->id, $customer->id, purchase: $purchase))->toOthers();
 
             return response()->json($purchase);
         } catch (BadRequestException $e) {
