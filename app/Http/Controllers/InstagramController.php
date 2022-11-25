@@ -15,6 +15,7 @@ use App\Services\StoryService;
 use App\Services\TransactionService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class InstagramController extends Controller
@@ -188,6 +189,8 @@ class InstagramController extends Controller
             'expired' => 'boolean',
             'submitted' => 'boolean',
             'redeemed' => 'boolean',
+            'order_by' => 'string',
+            'order' => 'string',
         ]);
 
         if ($user->isMerchant()) {
@@ -234,9 +237,34 @@ class InstagramController extends Controller
             }
         }
 
+        if (array_key_exists('order_by', $request)) {
+            $orderBy = $request['order_by'];
+            $orderBy = explode(',', $orderBy);
+
+            foreach ($orderBy as $order) {
+                $order = explode(':', $order);
+                if (count($order) !== 2) {
+                    return response()->json(['message' => 'Invalid order by'], Response::HTTP_BAD_REQUEST);
+                }
+
+                $column = $order[0];
+                $direction = $order[1];
+                if (!in_array($direction, ['asc', 'desc'])) {
+                    return response()->json(['message' => 'Invalid order by'], Response::HTTP_BAD_REQUEST);
+                }
+
+                if (Schema::hasColumn('story_tokens', $column)) {
+                    $tokens = $tokens->orderBy($column, $direction);
+                } else {
+                    return response()->json(['message' => 'Invalid order by'], Response::HTTP_BAD_REQUEST);
+                }
+            }
+        } else {
+            $tokens = $tokens->orderBy('id', 'desc');
+        }
+
         $tokens = $tokens
-            ->with('story')
-            ->orderBy('id', 'desc')
+            ->with('story', 'cashback')
             ->paginate();
         return response()->json($tokens);
     }
