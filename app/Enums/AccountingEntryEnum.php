@@ -6,8 +6,8 @@ use App\Traits\EnumToArray;
 
 enum AccountingEntryEnum: string
 {
-  use EnumToArray;
+    use EnumToArray;
 
-  case DEBIT = 'D';
-  case CREDIT = 'C';
+    case DEBIT = 'D';
+    case CREDIT = 'C';
 }

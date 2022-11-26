@@ -6,8 +6,8 @@ use App\Traits\EnumToArray;
 
 enum RegisterableRoleEnum: string
 {
-  use EnumToArray;
+    use EnumToArray;
 
-  case MERCHANT = 'merchant';
-  case CUSTOMER = 'customer';
+    case MERCHANT = 'merchant';
+    case CUSTOMER = 'customer';
 }
