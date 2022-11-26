@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Jobs\ApproveStory;
 use App\Jobs\Config;
+use App\Jobs\ExpireToken;
+use App\Jobs\FinalizeStoryValidation;
 use App\Jobs\TestJob;
 use App\Jobs\ValidateStory;
 use Illuminate\Auth\Events\Registered;
@@ -34,8 +37,10 @@ class EventServiceProvider extends ServiceProvider
         // Config::dispatch();
 
         // $this->app->bind(Config::class.'@handle', fn($job) => $job->handle());
-        $this->app->bind(TestJob::class.'@handle', fn($job) => $job->handle());
-        $this->app->bind(ValidateStory::class.'@handle', fn($job) => $job->handle());
+        $this->app->bind(TestJob::class . '@handle', fn ($job) => $job->handle());
+        $this->app->bind(ValidateStory::class . '@handle', fn ($job) => $job->handle());
+        $this->app->bind(FinalizeStoryValidation::class . '@handle', fn ($job) => $job->handle());
+        $this->app->bind(ApproveStory::class . '@handle', fn ($job) => $job->handle());
     }
 
     /**

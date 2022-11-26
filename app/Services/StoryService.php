@@ -6,6 +6,8 @@ use App\Enums\CashbackCalculationMethodEnum;
 use App\Enums\CoinTypeEnum;
 use App\Enums\InstagramStoryStatusEnum;
 use App\Enums\StoryApprovalStatusEnum;
+use App\Jobs\ApproveStory;
+use App\Jobs\FinalizeStoryValidation;
 use App\Jobs\ValidateStory;
 use App\Models\CustomerStory;
 use App\Models\Purchase;
@@ -103,6 +105,8 @@ class StoryService
       $story->save();
 
       $transactionService->addStoryToToken($story, $storyToken);
+
+      ApproveStory::dispatch(['id' => $story->id])->delay(now()->addDays(2));
     });
 
     return $storyToken->load('story', 'purchase');
@@ -216,6 +220,7 @@ class StoryService
 
     ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id])
       ->delay(now()->addSeconds($story->expiring_at - $this->storyInspectedTimeBeforeExpiry));
+    ApproveStory::dispatch(['id' => $story->id])->delay(now()->addDay());
 
     return $story;
   }
@@ -257,21 +262,15 @@ class StoryService
     $story->note = $storyRequest['note'] ?? null;
     $story->save();
 
-    if ($story->expiring_at < $this->storyInspectedTimeBeforeExpiry) {
-      ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id]);
-    }
+    FinalizeStoryValidation::dispatch(['id' => $story->id]);
 
     return $story;
   }
 
-  function getOnAirCustomerStory($instagramStoryId)
+  function isStoryOnAir($customerStory)
   {
-    $story = CustomerStory::where('instagram_story_id', $instagramStoryId)->first();
-    if (!$story) {
-      return null;
-    }
-
-    $instagramId = $story->instagram_id;
+    $instagramId = $customerStory->instagram_id;
+    $instagramStoryId = $customerStory->instagram_story_id;
     $stories = $this->getStories($instagramId);
     $stories = array_filter($stories, function ($story) use ($instagramStoryId) {
       return $story['pk'] == $instagramStoryId;
@@ -280,40 +279,24 @@ class StoryService
     $instagramStory = array_shift($stories);
 
     if ($instagramStory) {
-      return $story;
+      return true;
     }
+    return false;
   }
 
-  function validateStory($instagramStoryId)
+  function validateStory($customerStory)
   {
-    $story = $this->getOnAirCustomerStory($instagramStoryId);
-    info('validateStory', [$story]);
-    if ($story) {
-      if ($story->expiring_at < $this->storyInspectedTimeBeforeExpiry) {
-        $story->instagram_story_status = InstagramStoryStatusEnum::VALIDATED;
-        $story->inspected_at = now();
-        $story->save();
-      } else {
-        ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id])
-          ->delay(now()->addSeconds($story->expiring_at - $this->storyInspectedTimeBeforeExpiry));
-      }
-
-      return [
-        'success' => true,
-        'story' => $story,
-      ];
+    info('validateStory', [$customerStory]);
+    if ($this->isStoryOnAir($customerStory)) {
+      $customerStory->instagram_story_status = InstagramStoryStatusEnum::VALIDATED;
+      $customerStory->inspected_at = now();
+      $customerStory->save();
+    } else {
+      $customerStory->update([
+        'instagram_story_status' => InstagramStoryStatusEnum::DELETED,
+        'inspected_at' => now(),
+      ]);
     }
-
-    $story = CustomerStory::where('instagram_story_id', $instagramStoryId)->first();
-    $story->update([
-      'instagram_story_status' => InstagramStoryStatusEnum::DELETED,
-      'inspected_at' => now(),
-    ]);
-
-    return [
-      'success' => false,
-      'story' => $story,
-    ];
   }
 
   private function getMentionedStory(CustomerStory $customerStory, $instagramStoryId)
