@@ -7,6 +7,7 @@ use App\Enums\CoinTypeEnum;
 use App\Enums\InstagramStoryStatusEnum;
 use App\Enums\StoryApprovalStatusEnum;
 use App\Jobs\ApproveStory;
+use App\Jobs\ExpireToken;
 use App\Jobs\FinalizeStoryValidation;
 use App\Jobs\ValidateStory;
 use App\Models\CustomerStory;
@@ -55,10 +56,12 @@ class StoryService
 
       $tokenCode = $this->generateUniqueToken($instagramId);
 
+      $expiredAt = now()->addDay();
+
       $storyToken = new StoryToken([
         'code' => $tokenCode,
         'instagram_id' => $instagramId,
-        'expires_at' => now()->addHours(18),
+        'expires_at' => $expiredAt,
       ]);
       $storyToken->purchase()->associate($purchase);
       $storyToken->save();
@@ -71,6 +74,8 @@ class StoryService
       ]);
       $cashback->token()->associate($storyToken);
       $cashback->save();
+
+      ExpireToken::dispatch(['id' => $storyToken->id])->delay($expiredAt);
       return $storyToken;
     });
   }

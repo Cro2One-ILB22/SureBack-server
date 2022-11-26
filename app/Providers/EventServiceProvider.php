@@ -41,6 +41,7 @@ class EventServiceProvider extends ServiceProvider
         $this->app->bind(ValidateStory::class . '@handle', fn ($job) => $job->handle());
         $this->app->bind(FinalizeStoryValidation::class . '@handle', fn ($job) => $job->handle());
         $this->app->bind(ApproveStory::class . '@handle', fn ($job) => $job->handle());
+        $this->app->bind(ExpireToken::class . '@handle', fn ($job) => $job->handle());
     }
 
     /**
