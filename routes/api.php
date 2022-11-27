@@ -55,6 +55,7 @@ Route::group([
     'prefix' => 'merchant'
 ], function ($router) {
     Route::get('', [UserController::class, 'merchants']);
+    Route::get('{id}', [UserController::class, 'merchant']);
 });
 
 Route::group([
@@ -63,6 +64,7 @@ Route::group([
 ], function ($router) {
     Route::get('', [UserController::class, 'customers']);
     Route::get('story', [InstagramController::class, 'story']);
+    Route::get('{id}', [UserController::class, 'customer']);
 });
 
 Route::group([

@@ -54,7 +54,10 @@ class UserService
         }
 
         return $merchants
-            ->with('merchantDetail', 'merchantCoins.customer');
+            ->with('merchantDetail')
+            ->with(['merchantCoins' => function ($query) use ($user) {
+                $query->where('customer_id', '=', $user->id);
+            }]);
     }
 
     function getCustomers(User $user, array $params = [], bool $hasFavoritedMe = null, bool $hasVisited = null)
@@ -102,6 +105,8 @@ class UserService
         }
 
         return $customers
-            ->with('customerCoins.merchant');
+            ->with(['customerCoins' => function ($query) use ($user) {
+                $query->where('merchant_id', '=', $user->id);
+            }]);
     }
 }
