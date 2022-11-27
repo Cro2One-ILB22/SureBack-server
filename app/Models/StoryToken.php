@@ -31,10 +31,11 @@ class StoryToken extends Model
     protected $appends = [
         'merchant',
         'issued_at',
+        'redeemed_at',
         'expired_at',
         'submitted_at',
         'finished_at',
-        'final_status',
+        'current_status',
         'approved_at',
         'rejected_at',
         'rejected_reason',
@@ -45,7 +46,11 @@ class StoryToken extends Model
     protected function expiredAt(): Attribute
     {
         return new Attribute(
-            fn () => $this->finalStatus === 'expired' ? $this->expires_at : null,
+            function () {
+                if ($this->expires_at->isPast() && !$this->submittedAt) {
+                    return $this->expires_at;
+                }
+            }
         );
     }
 
@@ -77,6 +82,18 @@ class StoryToken extends Model
         );
     }
 
+    protected function redeemedAt(): Attribute
+    {
+        return new Attribute(
+            function () {
+                $story = $this->story;
+                if ($story) {
+                    return $story->created_at;
+                }
+            },
+        );
+    }
+
     protected function submittedAt(): Attribute
     {
         return new Attribute(
@@ -88,57 +105,33 @@ class StoryToken extends Model
     {
         return new Attribute(
             function () {
-                if (!$this->story) {
-                    return null;
-                }
-                $assessedAt = $this->story->assessed_at;
-                $inspectedAt = $this->story->inspected_at;
-                if ($assessedAt && $inspectedAt) {
-                    return max($assessedAt, $inspectedAt);
-                }
-                if ($assessedAt) {
-                    return $assessedAt;
-                }
-                if ($inspectedAt) {
-                    return $inspectedAt;
-                }
-                if ($this->approvedAt) {
-                    return $this->approvedAt;
-                }
-                if ($this->rejectedAt) {
-                    return $this->rejectedAt;
-                }
-                if ($this->expires_at->isPast()) {
-                    return $this->expires_at;
+                $finalStatuses = ['approved', 'rejected', 'expired'];
+                if (in_array($this->currentStatus, $finalStatuses)) {
+                    return $this->lastStatusUpdateAt;
                 }
             },
         );
     }
 
-    protected function finalStatus(): Attribute
+    protected function currentStatus(): Attribute
     {
         return new Attribute(
             function () {
-                if (!$this->story) {
-                    return 'issued';
+                $statusesTimestamp = [
+                    'issued' => $this->created_at,
+                    'redeemed' => $this->redeemedAt,
+                    'submitted' => $this->submittedAt,
+                    'approved' => $this->approvedAt,
+                    'rejected' => $this->rejectedAt,
+                    'expired' => $this->expiredAt,
+                ];
+                $last = max($statusesTimestamp);
+                $status = array_search($last, $statusesTimestamp);
+                if ($status === 'issued' && $this->issuedAt == $this->redeemedAt) {
+                    $status = 'redeemed';
                 }
-                $approvalStatus = $this->story->approval_status;
-                $instagramStoryStatus = $this->story->instagram_story_status;
-                if ($approvalStatus === null && $instagramStoryStatus === null) {
-                    if ($this->expires_at->isPast()) {
-                        return 'expired';
-                    }
-                    if ($this->created_at) {
-                        return 'redeemed';
-                    }
-                }
-                if ($approvalStatus === StoryApprovalStatusEnum::APPROVED && $instagramStoryStatus === InstagramStoryStatusEnum::VALIDATED) {
-                    return 'approved';
-                }
-                if ($approvalStatus === StoryApprovalStatusEnum::REJECTED || $instagramStoryStatus === InstagramStoryStatusEnum::DELETED) {
-                    return 'rejected';
-                }
-                return 'submitted';
+
+                return $status;
             }
         );
     }
@@ -147,8 +140,9 @@ class StoryToken extends Model
     {
         return new Attribute(
             function () {
-                if ($this->finalStatus === 'approved') {
-                    return $this->finishedAt;
+                $story = $this->story;
+                if ($story && $story->approval_status === StoryApprovalStatusEnum::APPROVED && $story->instagram_story_status === InstagramStoryStatusEnum::VALIDATED) {
+                    return max($this->story->assessed_at, $this->story->inspected_at);
                 }
             },
         );
@@ -158,8 +152,16 @@ class StoryToken extends Model
     {
         return new Attribute(
             function () {
-                if ($this->finalStatus === 'rejected') {
-                    return $this->finishedAt;
+                $story = $this->story;
+                if ($story) {
+                    if ($story->approval_status === StoryApprovalStatusEnum::REJECTED || $story->instagram_story_status === InstagramStoryStatusEnum::DELETED) {
+                        $assessedAt = $story->assessed_at;
+                        $inspectedAt = $story->inspected_at;
+                        if ($assessedAt && $inspectedAt) {
+                            return min($assessedAt, $inspectedAt);
+                        }
+                        return $assessedAt ?? $inspectedAt;
+                    }
                 }
             },
         );
@@ -169,7 +171,7 @@ class StoryToken extends Model
     {
         return new Attribute(
             function () {
-                if ($this->finalStatus === 'rejected') {
+                if ($this->currentStatus === 'rejected') {
                     return $this->story->note;
                 }
             },
@@ -180,7 +182,7 @@ class StoryToken extends Model
     {
         return new Attribute(
             function () {
-                $status = $this->finalStatus;
+                $status = $this->currentStatus;
                 return $this->{$status . 'At'};
             },
         );
@@ -191,35 +193,21 @@ class StoryToken extends Model
         return new Attribute(
             function () {
                 $history = [];
-                if ($this->issuedAt) {
-                    $history[] = [
-                        'status' => 'issued',
-                        'at' => $this->issuedAt,
-                    ];
-                }
-                if ($this->submittedAt) {
-                    $history[] = [
-                        'status' => 'submitted',
-                        'at' => $this->submittedAt,
-                    ];
-                }
-                if ($this->approvedAt) {
-                    $history[] = [
-                        'status' => 'approved',
-                        'at' => $this->approvedAt,
-                    ];
-                }
-                if ($this->rejectedAt) {
-                    $history[] = [
-                        'status' => 'rejected',
-                        'at' => $this->rejectedAt,
-                    ];
-                }
-                if ($this->expiredAt) {
-                    $history[] = [
-                        'status' => 'expired',
-                        'at' => $this->expiredAt,
-                    ];
+                $statusesTimestamp = [
+                    // 'issued' => $this->created_at,
+                    'redeemed' => $this->redeemedAt,
+                    'submitted' => $this->submittedAt,
+                    'approved' => $this->approvedAt,
+                    'rejected' => $this->rejectedAt,
+                    'expired' => $this->expiredAt,
+                ];
+                foreach ($statusesTimestamp as $status => $timestamp) {
+                    if ($timestamp) {
+                        $history[] = [
+                            'status' => $status,
+                            'timestamp' => $timestamp,
+                        ];
+                    }
                 }
                 return $history;
             },
