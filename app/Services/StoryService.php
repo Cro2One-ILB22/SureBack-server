@@ -28,6 +28,7 @@ class StoryService
     {
         $todaysTokenCount = $user->merchantDetail->todaysTokenCount();
         $dailyTokenLimit = $user->merchantDetail->daily_token_limit;
+        $cashbackPercent = $user->merchantDetail->cashback_percent;
 
         if ($dailyTokenLimit && $todaysTokenCount >= $dailyTokenLimit) {
             throw new BadRequestException('Daily token limit reached');
@@ -37,11 +38,14 @@ class StoryService
             throw new BadRequestException('You don\'t activate token generation');
         }
 
-        return DB::transaction(function () use ($user, $purchase) {
+        if (!$cashbackPercent || $cashbackPercent <= 0) {
+            throw new BadRequestException('You haven\'t set cashback percent');
+        }
+
+        return DB::transaction(function () use ($user, $purchase, $cashbackPercent) {
             $cashbackCalculationMethod = $user->merchantDetail->cashback_calculation_method;
             $purchaseAmount = $purchase->purchase_amount;
             $paymentAmount = $purchase->payment_amount;
-            $cashbackPercent = $user->merchantDetail->cashback_percent ?? 0;
             $cashbackPercentNormalized = $cashbackPercent / 100;
             $cashbackCalculatedWith = $purchaseAmount;
             $cashbackLimit = $user->merchantDetail->cashback_limit;
@@ -96,6 +100,10 @@ class StoryService
         if ($storyToken->story) {
             throw new BadRequestException('Token already redeemed');
         }
+        // $customerInstagram = (new InstagramService())->getProfile($customer->instagram_username);
+        // if ($customerInstagram['follower_count'] < 100) {
+        //     throw new BadRequestException('Customer doesn\'t have enough followers');
+        // }
 
         $transactionService = new TransactionService();
         $transactionService->initUserCoin($customer, $storyToken->merchant, CoinTypeEnum::LOCAL);

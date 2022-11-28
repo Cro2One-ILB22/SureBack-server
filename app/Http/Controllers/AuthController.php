@@ -93,7 +93,9 @@ class AuthController extends Controller
             if ($user) {
                 (new NotificationService())->registerForNotification($user);
                 if ($role === RegisterableRoleEnum::MERCHANT) {
-                    $user->merchantDetail()->create();
+                    $user->merchantDetail()->create([
+                        'cashback_percent' => 3,
+                    ]);
                 }
             }
 
