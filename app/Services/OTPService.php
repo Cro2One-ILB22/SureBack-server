@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\VariableEnum;
 use App\Models\Otp;
 use App\Models\OtpFactor;
-use App\Models\Variable;
 
 class OTPService
 {
@@ -51,7 +49,6 @@ class OTPService
         return [
             'otp' => $code,
             'expires_in' => $otp->expires_at->diffInSeconds(now()),
-            'dm_to_instagram' => Variable::where('key', VariableEnum::IG_USERNAME)->first()->value,
         ];
     }
 

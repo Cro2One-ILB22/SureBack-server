@@ -4,17 +4,19 @@ namespace App\Services;
 
 use App\Enums\VariableCategoryEnum;
 use App\Enums\VariableEnum;
+use App\Models\CorporateInstagram;
 use App\Models\User;
 use App\Models\Variable;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Throwable;
 
 class InstagramService
 {
-    static function callAPI($method, $path, $queries = [], $headers = [], $body = null, $auth = true)
+    static function callAPI($method, $path, $queries = [], $headers = [], $body = null, $auth = true, $username = null)
     {
         $variables = Variable::select('key', 'value')->whereHas('categories', function ($query) {
             $query->whereIn('slug', [VariableCategoryEnum::IG_WS]);
@@ -26,11 +28,9 @@ class InstagramService
         $baseUrl = $variables[VariableEnum::IG_BASE_URL->value];
         $host = $variables[VariableEnum::IG_HOST->value];
         $xAppId = $variables[VariableEnum::IG_APP_ID->value];
-        $sessionId = $variables[VariableEnum::IG_SESSION_ID->value];
         $userAgent = $variables[VariableEnum::IG_USER_AGENT->value];
         $referrer = $variables[VariableEnum::IG_REFERER->value];
         $origin = $variables[VariableEnum::IG_ORIGIN->value];
-        $csrfToken = $variables[VariableEnum::IG_CSRF_TOKEN->value];
         $asbdId = $variables[VariableEnum::IG_ASBD_ID->value];
         $url = $baseUrl . $path;
         $requestedWith = $variables[VariableEnum::IG_REQUESTED_WITH->value];
@@ -58,6 +58,21 @@ class InstagramService
         $response = Http::acceptJson();
 
         if ($auth) {
+            if ($username) {
+                $account = CorporateInstagram::where('username', $username)->first();
+            } else {
+                $account = CorporateInstagram::where('is_active', true)->orderBy('last_used_at', 'asc')->first();
+            }
+            if (!$account) {
+                throw new BadRequestException('No active instagram account found');
+            }
+            if (!$account->is_active) {
+                throw new BadRequestException('Try registering again');
+            }
+
+            $csrfToken = $account->csrf_token;
+            $sessionId = $account->session_id;
+
             $generalHeaders = array_merge($generalHeaders, [
                 'X-CSRFToken' => $csrfToken,
             ]);
@@ -82,8 +97,27 @@ class InstagramService
         // InstagramService::ssoUsers($headers, $cookies);
 
         if (!$response->successful()) {
+            Log::error($response->body());
+            if ($auth) {
+                $account->is_active = false;
+                $account->save();
+                return InstagramService::callAPI($method, $path, $queries, $headers, $body, $auth, $username);
+            }
             throw new BadRequestException('Under maintenance');
         }
+
+        if ($auth) {
+            if (!$response->json()) {
+                $account->is_active = false;
+            }
+            $account->last_used_at = now();
+            $account->used_count += 1;
+            $account->save();
+            if (!$response->json()) {
+                return InstagramService::callAPI($method, $path, $queries, $headers, $body, $auth, $username);
+            }
+        }
+
         return $response->json();
     }
 
@@ -130,6 +164,10 @@ class InstagramService
         ];
         $responseJson = $this->callAPI('GET', $path, $queries, auth: false);
 
+        if (!$responseJson) {
+            $responseJson = $this->callAPI('GET', $path, $queries);
+        }
+
         return $responseJson['data']['user'];
     }
 
@@ -159,7 +197,7 @@ class InstagramService
         ];
     }
 
-    function getInbox($cursor, $pending = false)
+    function getInbox($cursor, $instagramToDM, $pending = false)
     {
         $path = 'direct_v2/' . ($pending ? 'pending_inbox' : 'inbox');
         $queries = [
@@ -172,14 +210,14 @@ class InstagramService
             // 'reason' => 'cold_start_fetch',
             // 'last_activity_at' => time(),
         ];
-        $responseJson = $this->callAPI('GET', $path, $queries);
+        $responseJson = $this->callAPI('GET', $path, $queries, username: $instagramToDM);
 
         return $responseJson['inbox'];
     }
 
-    function getOTPFrom($instagramId, $cursor = null, $pending = true, $expirationMinutes = 5)
+    function getOTPFrom($instagramId, $instagramToDM, $cursor = null, $pending = true, $expirationMinutes = 5)
     {
-        $inbox = $this->getInbox($cursor, $pending);
+        $inbox = $this->getInbox($cursor, $instagramToDM, $pending);
         $threads = $inbox['threads'];
         $otp = null;
         $expired = false;
@@ -206,24 +244,19 @@ class InstagramService
 
         if ($expired) {
             if ($pending) {
-                return $this->getOTPFrom($instagramId, $cursor, false);
+                return $this->getOTPFrom($instagramId, $instagramToDM, $cursor, false);
             } else {
                 return null;
             }
         }
 
         if (!$otp) {
-            if (array_key_exists('oldest_cursor', $inbox)) {
-                $cursor = $inbox['oldest_cursor'];
-            } else {
-                $cursor = null;
-            }
-
+            $cursor = array_key_exists('oldest_cursor', $inbox) ? $inbox['oldest_cursor'] : null;
             if ($cursor) {
-                return $this->getOTPFrom($instagramId, $cursor, $pending);
+                return $this->getOTPFrom($instagramId, $instagramToDM, $cursor, $pending);
             } else {
                 if ($pending) {
-                    return $this->getOTPFrom($instagramId, $cursor, false);
+                    return $this->getOTPFrom($instagramId, $instagramToDM, $cursor, false);
                 } else {
                     return null;
                 }
@@ -252,10 +285,9 @@ class InstagramService
         return $instagramId;
     }
 
-    function verifyOTP($username)
+    function verifyOTP($instagramId, $instagramToDM)
     {
-        $instagramId = $this->getUniqueInstagramId($username);
-        $otp = $this->getOTPFrom($instagramId);
+        $otp = $this->getOTPFrom($instagramId, $instagramToDM);
         if (!$otp || !is_numeric($otp)) {
             throw new BadRequestException('OTP not found');
         }

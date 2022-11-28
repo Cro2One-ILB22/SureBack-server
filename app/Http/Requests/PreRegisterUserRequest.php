@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\RegisterableRoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreUserRequest extends FormRequest
+class PreRegisterUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -30,7 +30,6 @@ class StoreUserRequest extends FormRequest
             'password' => 'required|string|min:6',
             'username' => 'required|string',
             'role' => 'required|string|in:' . implode(',', RegisterableRoleEnum::values()),
-            'instagram_to_dm' => 'required|string',
         ];
     }
 }

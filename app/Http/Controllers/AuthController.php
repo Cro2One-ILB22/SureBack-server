@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\CoinTypeEnum;
 use App\Enums\RegisterableRoleEnum;
 use App\Enums\RoleEnum;
+use App\Http\Requests\PreRegisterUserRequest;
 use App\Http\Requests\StoreDeviceRequest;
 use App\Http\Requests\StoreUserRequest;
+use App\Models\CorporateInstagram;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\DeviceService;
@@ -30,7 +32,7 @@ class AuthController extends Controller
         $this->middleware('auth:sanctum', ['except' => ['login', 'register', 'instagramOTPRegister', 'register']]);
     }
 
-    public function instagramOTPRegister(StoreUserRequest $request)
+    public function instagramOTPRegister(PreRegisterUserRequest $request)
     {
         $validated = $request->safe();
         $instagramService = new InstagramService();
@@ -40,7 +42,11 @@ class AuthController extends Controller
 
             $otpService = new OTPService();
 
-            return response()->json($otpService->generateInstagramOTP($reqData));
+            $account = CorporateInstagram::where('is_active', true)->orderBy('last_used_at', 'asc')->first();
+            $otpResponse = $otpService->generateInstagramOTP($reqData);
+            $otpResponse['instagram_to_dm'] = $account->username;
+
+            return response()->json($otpResponse);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -51,9 +57,10 @@ class AuthController extends Controller
         $validated = $request->validated();
         try {
             $username = $validated['username'];
+            $instagramToDM = $validated['instagram_to_dm'];
             $instagramService = new InstagramService();
             $instagramId = $instagramService->getUniqueInstagramId($username);
-            $instagramService->verifyOTP($username);
+            $instagramService->verifyOTP($instagramId, $instagramToDM);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
