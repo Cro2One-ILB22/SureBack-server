@@ -20,6 +20,7 @@ use App\Models\TransactionStatus;
 use App\Models\User;
 use App\Models\UserCoin;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class TransactionService
 {
@@ -228,6 +229,18 @@ class TransactionService
             $token->purchase->customerTransaction->user()->associate($customer);
             $token->purchase->customerTransaction->save();
         });
+    }
+
+    function checkCoinsAvailability(User $user, $merchantId, $purchaseAmount, $usedCoins)
+    {
+        $customerCoins = $user->customerCoins()->where('merchant_id', $merchantId)->where('coin_type', CoinTypeEnum::LOCAL)->first();
+
+        if (!$customerCoins || $customerCoins->outstanding < $usedCoins) {
+            throw new BadRequestException('Insufficient coins');
+        }
+        if ($usedCoins > $purchaseAmount) {
+            throw new BadRequestException('Cannot use more coins than purchase amount');
+        }
     }
 
     private function confirmCustomerCashback(CustomerStory $story)
