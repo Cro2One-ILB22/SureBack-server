@@ -265,7 +265,10 @@ class InstagramController extends Controller
 
         $tokens = $tokens
             ->with('story', 'cashback')
-            ->paginate();
+            ->paginate()
+            ->through(function ($token) {
+                return $token->makeVisible(['purchase']);
+            });
         return response()->json($tokens);
     }
 
@@ -381,7 +384,7 @@ class InstagramController extends Controller
         }
 
         $stories = $stories
-            ->with(['token', 'customer'])
+            ->with(['token.cashback', 'customer', 'token.purchase'])
             ->orderBy('id', 'desc')
             ->paginate();
         return response()->json($stories);

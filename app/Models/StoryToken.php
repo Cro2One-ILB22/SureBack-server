@@ -22,6 +22,7 @@ class StoryToken extends Model
 
     protected $hidden = [
         'purchase_id',
+        'purchase',
     ];
 
     protected $casts = [

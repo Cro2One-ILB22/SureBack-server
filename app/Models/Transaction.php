@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\AccountingEntryEnum;
+use App\Enums\TransactionCategoryEnum;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,7 +35,36 @@ class Transaction extends Model
         'transaction_category_id',
         'transaction_status_id',
         'payment_instrument_id',
+        'cashback',
+        'customerCoinExchange',
+        'merchantCoinExchange',
     ];
+
+    protected $appends = [
+        'purchase',
+    ];
+
+    protected function purchase(): Attribute
+    {
+        return new Attribute(
+            function () {
+                if ($this->category->slug === TransactionCategoryEnum::COIN_EXCHANGE) {
+                    if ($this->user->isCustomer()) {
+                        return $this->customerCoinExchange->purchase;
+                    } else if ($this->user->isMerchant()) {
+                        return $this->merchantCoinExchange->purchase;
+                    }
+                }
+                if ($this->category->slug === TransactionCategoryEnum::CASHBACK) {
+                    $purchase = $this->cashback->story->token->purchase;
+                }
+
+                if (isset($purchase)) {
+                    return $purchase->load(['merchant', 'customer', 'token.cashback']);
+                }
+            }
+        );
+    }
 
     public function user()
     {
