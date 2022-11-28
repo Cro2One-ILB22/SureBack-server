@@ -13,12 +13,11 @@ services:
             target: fpm_server
             args:
                 APP_DIR: "${APP_DIR:-/var/www}"
+                GCP_CREDENTIALS: "${GCP_CREDENTIALS:-}"
         image: "${FPM_IMAGE:-mfahmialkautsar/sureback-fpm_server}"
         restart: always
         # We can override any env values here.
         # By default the .env in the project root will be loaded as the environment for all containers
-        env_file:
-            - .env
         # Mount the codebase, so any code changes we make will be propagated to the running application
         volumes:
             # Here we mount in our codebase so any changes are immediately reflected into the container

@@ -15,6 +15,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
       APP_DIR: ${{ secrets.APP_DIR }}
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
       # SSL_CERT: ${{ secrets.SSL_CERT }}
       # SSL_KEY: ${{ secrets.SSL_KEY }}
       FPM_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-fpm_server
@@ -23,15 +24,6 @@ jobs:
       FRONTEND_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-frontend
     steps:
       - uses: actions/checkout@v3
-      - name: "Create .env file"
-        run: |
-          echo APP_DIR='"${{ secrets.APP_DIR }}"' >> .env
-        # echo SSL_CERT='"${{ secrets.SSL_CERT }}"' >> .env
-        # echo SSL_KEY='"${{ secrets.SSL_KEY }}"' >> .env
-      - name: "Create Google SA json"
-        run: |
-          mkdir -p storage/app/google
-          echo "${{ secrets.GCP_CREDENTIALS }}" > storage/app/google/auth.json
       - name: "Build Docker Image"
         run: |
           docker-compose build

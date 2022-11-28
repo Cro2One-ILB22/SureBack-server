@@ -91,6 +91,7 @@ FROM php:8.1.12 as cli
 # ARG PHP_EXTS
 # ARG PHP_PECL_EXTS
 ARG APP_DIR
+ARG GCP_CREDENTIALS
 
 WORKDIR ${APP_DIR}
 
@@ -123,6 +124,9 @@ RUN docker-php-ext-install gd
 COPY --from=composer_base ${APP_DIR} ${APP_DIR}
 # COPY --from=frontend ${APP_DIR}/public ${APP_DIR}/public
 
+RUN mkdir -p storage/app/google && \
+    echo $GCP_CREDENTIALS > storage/app/google/auth.json
+
 
 # We need a stage which contains FPM to actually run and process requests to our PHP application.
 FROM php:8.1.12-fpm as fpm_server
@@ -131,6 +135,7 @@ FROM php:8.1.12-fpm as fpm_server
 # ARG PHP_EXTS
 # ARG PHP_PECL_EXTS
 ARG APP_DIR
+ARG GCP_CREDENTIALS
 
 WORKDIR ${APP_DIR}
 
@@ -164,6 +169,9 @@ RUN docker-php-ext-install gd
 # We have to copy in our code base from our initial build which we installed in the previous stage
 COPY --from=composer_base --chown=www-data ${APP_DIR} ${APP_DIR}
 # COPY --from=frontend --chown=www-data ${APP_DIR}/public ${APP_DIR}/public
+
+RUN mkdir -p storage/app/google && \
+    echo $GCP_CREDENTIALS > storage/app/google/auth.json
 
 # We want to cache the event, routes, and views so we don't try to write them when we are in Kubernetes.
 # Docker builds should be as immutable as possible, and this removes a lot of the writing of the live application.
