@@ -25,6 +25,13 @@ class StoryToken extends Model
         'purchase',
     ];
 
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
+    protected $dates = ['expires_at'];
+
     protected $casts = [
         'instagram_id' => 'integer',
     ];

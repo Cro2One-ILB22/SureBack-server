@@ -33,6 +33,13 @@ class CustomerStory extends Model
         'story_url',
     ];
 
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
+    protected $dates = ['assessed_at', 'inspected_at', 'submitted_at'];
+
     protected $casts = [
         'instagram_story_id' => 'integer',
         'instagram_id' => 'integer',

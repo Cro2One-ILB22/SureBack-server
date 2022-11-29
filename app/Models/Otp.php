@@ -17,6 +17,13 @@ class Otp extends Model
         'expires_at',
     ];
 
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
+    protected $dates = ['expires_at'];
+
     protected function code(): Attribute
     {
         return new Attribute(
