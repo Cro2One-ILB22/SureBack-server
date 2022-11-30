@@ -9,6 +9,7 @@ use App\Enums\StoryApprovalStatusEnum;
 use App\Jobs\ApproveStory;
 use App\Jobs\ExpireToken;
 use App\Jobs\FinalizeStoryValidation;
+use App\Jobs\SaveFile;
 use App\Jobs\ValidateStory;
 use App\Models\CustomerStory;
 use App\Models\Purchase;
@@ -203,10 +204,30 @@ class StoryService
         if (!$story) {
             return false;
         }
+
+        $imageUri = $mentionedStory['image_versions2']['candidates'][0]['url'];
+        $videoUri = $mentionedStory['media_type'] === 2 ? $mentionedStory['video_versions'][0]['url'] : null;
+        $time = time();
+        $imageName = "{$story->id}_{$time}";
+        $videoName = $videoUri ? $imageName : null;
+
+        SaveFile::dispatch([
+            'url' => $imageUri,
+            'path' => "stories/{$imageName}",
+            'type' => 'image',
+        ]);
+        if ($videoUri) {
+            SaveFile::dispatch([
+                'url' => $videoUri,
+                'path' => "stories/{$videoName}",
+                'type' => 'video',
+            ]);
+        }
+
         $story->update([
             'instagram_story_id' => $instagramStoryId,
-            'image_uri' => $mentionedStory['image_versions2']['candidates'][0]['url'],
-            'video_uri' => $mentionedStory['media_type'] === 2 ? $mentionedStory['video_versions'][0]['url'] : null,
+            'image_uri' => $imageName,
+            'video_uri' => $videoName,
             'music_metadata' => $mentionedStory['music_metadata'] ?? null,
             'approval_status' => StoryApprovalStatusEnum::REVIEW,
             'instagram_story_status' => InstagramStoryStatusEnum::UPLOADED,
@@ -219,6 +240,8 @@ class StoryService
             ->delay(now()->addSeconds($story->expiring_at - $this->storyInspectedTimeBeforeExpiry));
         ApproveStory::dispatch(['id' => $story->id])->delay(now()->addDay());
 
+        $story->image_uri = $imageUri;
+        $story->video_uri = $videoUri;
         return $story;
     }
 

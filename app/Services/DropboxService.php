@@ -41,4 +41,16 @@ class DropboxService
             return null;
         }
     }
+
+    function getTempVideoLink($path)
+    {
+        try {
+            return Cache::remember("dropbox.temp_link.video/{$path}", 10800, function () use ($path) {
+                $link = $this->client->getTemporaryLink("videos/{$path}.mp4");
+                return $link;
+            });
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InstagramStoryStatusEnum;
 use App\Enums\StoryApprovalStatusEnum;
+use App\Services\DropboxService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ class CustomerStory extends Model
         'instagram_story_id',
         'instagram_id',
         'image_uri',
+        'video_uri',
         'approval_status',
         'instagram_story_status',
         'submitted_at',
@@ -48,6 +50,20 @@ class CustomerStory extends Model
         'instagram_story_status' => InstagramStoryStatusEnum::class,
         'expiring_at' => 'integer',
     ];
+
+    protected function imageUri(): Attribute
+    {
+        return new Attribute(
+            fn ($value) => $value ? ((new DropboxService())->getTempImageLink("stories/{$value}") ?? $value) : $value
+        );
+    }
+
+    protected function videoUri(): Attribute
+    {
+        return new Attribute(
+            fn ($value) => $value ? ((new DropboxService())->getTempVideoLink("stories/{$value}") ?? $value) : $value
+        );
+    }
 
     public function approvalStatus(): Attribute
     {
