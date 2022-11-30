@@ -9,6 +9,7 @@ use App\Models\CorporateInstagram;
 use App\Models\User;
 use App\Models\Variable;
 use GuzzleHttp\Cookie\CookieJar;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -178,11 +179,10 @@ class InstagramService
         $queries = [
             'username' => $username,
         ];
-        $responseJson = $this->callAPI('GET', $path, $queries, auth: false);
 
-        if (!$responseJson) {
-            $responseJson = $this->callAPI('GET', $path, $queries);
-        }
+        $responseJson = Cache::remember("ig.profile.{$username}", 300, function () use ($path, $queries) {
+            return $this->callAPI('GET', $path, $queries, auth: false) ?? $this->callAPI('GET', $path, $queries);
+        });
 
         return $responseJson['data']['user'];
     }
@@ -190,7 +190,9 @@ class InstagramService
     function getUserInfo($id)
     {
         $path = 'users/' . $id . '/info/';
-        $responseJson = $this->callAPI('GET', $path);
+        $responseJson = Cache::remember("ig.user.{$id}", 300, function () use ($path) {
+            return $this->callAPI('GET', $path);
+        });
         $userInfo = $responseJson['user'];
         $id = $userInfo['pk'];
         $username = $userInfo['username'];

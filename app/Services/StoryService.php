@@ -16,6 +16,7 @@ use App\Models\Purchase;
 use App\Models\StoryToken;
 use App\Models\TokenCashback;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
@@ -181,7 +182,9 @@ class StoryService
             'reel_ids' => $instagramId,
         ];
 
-        $responseJson = InstagramService::callAPI('GET', $path, $queries);
+        $responseJson = Cache::remember('ig.stories.' . $instagramId, 60, function () use ($path, $queries) {
+            return InstagramService::callAPI('GET', $path, $queries);
+        });
 
         $reels = $responseJson['reels_media'];
         if (count($reels) > 0) {
