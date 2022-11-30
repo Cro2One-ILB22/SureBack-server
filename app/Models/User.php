@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Services\DropboxService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -53,6 +54,13 @@ class User extends Authenticatable
     {
         return new Attribute(
             set: fn ($value) => bcrypt($value)
+        );
+    }
+
+    protected function profilePicture(): Attribute
+    {
+        return new Attribute(
+            fn ($value) => (new DropboxService())->getTempImageLink("profile/{$value}")
         );
     }
 

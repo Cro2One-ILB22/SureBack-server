@@ -6,6 +6,7 @@ use App\Jobs\ApproveStory;
 use App\Jobs\Config;
 use App\Jobs\ExpireToken;
 use App\Jobs\FinalizeStoryValidation;
+use App\Jobs\SaveFile;
 use App\Jobs\TestJob;
 use App\Jobs\ValidateStory;
 use Illuminate\Auth\Events\Registered;
@@ -42,6 +43,7 @@ class EventServiceProvider extends ServiceProvider
         $this->app->bind(FinalizeStoryValidation::class . '@handle', fn ($job) => $job->handle());
         $this->app->bind(ApproveStory::class . '@handle', fn ($job) => $job->handle());
         $this->app->bind(ExpireToken::class . '@handle', fn ($job) => $job->handle());
+        $this->app->bind(SaveFile::class . '@handle', fn ($job) => $job->handle());
     }
 
     /**

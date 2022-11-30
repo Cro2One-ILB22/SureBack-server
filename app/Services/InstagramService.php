@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\VariableCategoryEnum;
 use App\Enums\VariableEnum;
+use App\Jobs\SaveFile;
 use App\Models\CorporateInstagram;
 use App\Models\User;
 use App\Models\Variable;
@@ -126,7 +127,22 @@ class InstagramService
         try {
             $user = User::where('instagram_id', $profileInfo['id'])->first();
             if ($user) {
-                $user->profile_picture = $profileInfo['profile_pic_url_hd'];
+                // check if nullable image name format is <id>_<time>
+                $userPicture = $user->getRawOriginal('profile_picture') ?? '';
+                $pictureTimestamp = explode('_', $userPicture);
+                $pictureTimestamp = end($pictureTimestamp);
+
+                // if picture age is more than 1 day, update it
+                if (!$pictureTimestamp || !is_numeric($pictureTimestamp) || time() - $pictureTimestamp > 86400 || time() - $pictureTimestamp < 0) {
+                    $time = time();
+                    $pictureName = "{$user->instagram_id}_{$time}";
+                    SaveFile::dispatch([
+                        'url' => $profileInfo['profile_pic_url'],
+                        'path' => "profile/{$pictureName}",
+                        'type' => 'image',
+                    ]);
+                    $user->profile_picture = $pictureName;
+                }
                 $user->instagram_username = $profileInfo['username'];
                 $user->save();
             }
