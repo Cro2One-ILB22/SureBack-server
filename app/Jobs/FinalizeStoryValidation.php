@@ -55,7 +55,7 @@ class FinalizeStoryValidation implements ShouldQueue
 
                 $notificationService->sendAndSaveNotification(
                     'Cashback Approved',
-                    'You have received a cashback of ' . $story->token->cashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->merchant->name,
+                    'You have received a cashback of ' . $story->token->cashback->amount . ' for your purchase of ' . $story->token->purchase_amount . ' at ' . $story->token->purchase->merchant->name,
                     $generalNotificationSubscription,
                 );
             } else if ($approvalStatus == StoryApprovalStatusEnum::REJECTED || $instagramStoryStatus == InstagramStoryStatusEnum::DELETED) {

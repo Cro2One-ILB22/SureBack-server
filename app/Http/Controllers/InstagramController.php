@@ -264,12 +264,10 @@ class InstagramController extends Controller
             $tokens = $tokens->orderBy('id', 'desc');
         }
 
+        $userContradictiveRole = $user->isCustomer() ? 'merchant' : 'customer';
         $tokens = $tokens
-            ->with('story', 'cashback')
-            ->paginate()
-            ->through(function ($token) {
-                return $token->makeVisible(['purchase']);
-            });
+            ->with('story', 'cashback', "purchase.{$userContradictiveRole}")
+            ->paginate();
         return response()->json($tokens);
     }
 
@@ -384,10 +382,16 @@ class InstagramController extends Controller
             }
         }
 
+        $userContradictiveRole = $user->isCustomer() ? 'merchant' : 'customer';
+        $userContradictiveRole = $userContradictiveRole == 'merchant' ? 'token.purchase.merchant' : 'customer';
         $stories = $stories
-            ->with(['token.cashback', 'customer', 'token.purchase'])
+            ->with(['token.cashback', 'token.purchase', $userContradictiveRole])
             ->orderBy('id', 'desc')
-            ->paginate();
+            ->paginate()
+            ->through(function ($story) {
+                $story->token->story = null;
+                return $story;
+            });
         return response()->json($stories);
     }
 }

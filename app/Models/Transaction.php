@@ -32,6 +32,8 @@ class Transaction extends Model
 
     protected $hidden = [
         'user_id',
+        'user',
+        'tokens',
         'transaction_category_id',
         'transaction_status_id',
         'payment_instrument_id',
@@ -50,17 +52,21 @@ class Transaction extends Model
             function () {
                 if ($this->category->slug === TransactionCategoryEnum::COIN_EXCHANGE) {
                     if ($this->user->isCustomer()) {
-                        return $this->customerCoinExchange->purchase;
+                        $purchase = $this->customerCoinExchange->purchase;
                     } else if ($this->user->isMerchant()) {
-                        return $this->merchantCoinExchange->purchase;
+                        $purchase = $this->merchantCoinExchange->purchase;
                     }
                 }
                 if ($this->category->slug === TransactionCategoryEnum::CASHBACK) {
                     $purchase = $this->cashback->story->token->purchase;
                 }
+                if ($this->category->slug === TransactionCategoryEnum::STORY) {
+                    $purchase = $this->tokens->first()->purchase;
+                }
 
                 if (isset($purchase)) {
-                    return $purchase->load(['merchant', 'customer', 'token.cashback']);
+                    $user = $this->user->isCustomer() ? 'merchant' : 'customer';
+                    return $purchase->load([$user, 'token.cashback']);
                 }
             }
         );
@@ -129,5 +135,10 @@ class Transaction extends Model
     public function merchantCoinExchange()
     {
         return $this->hasOne(CoinExchange::class, 'merchant_transaction_id');
+    }
+
+    public function tokens()
+    {
+        return $this->belongsToMany(StoryToken::class, 'token_transactions');
     }
 }

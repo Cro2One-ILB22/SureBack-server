@@ -22,7 +22,6 @@ class StoryToken extends Model
 
     protected $hidden = [
         'purchase_id',
-        'purchase',
     ];
 
     /**
@@ -37,7 +36,6 @@ class StoryToken extends Model
     ];
 
     protected $appends = [
-        'merchant',
         'issued_at',
         'redeemed_at',
         'expired_at',
@@ -73,13 +71,6 @@ class StoryToken extends Model
                 return 'expired';
             },
             fn ($value) => CryptoService::encrypt($value)
-        );
-    }
-
-    protected function merchant(): Attribute
-    {
-        return new Attribute(
-            fn () => $this->purchase->merchant,
         );
     }
 

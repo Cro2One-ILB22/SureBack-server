@@ -107,8 +107,8 @@ class StoryService
         // }
 
         $transactionService = new TransactionService();
-        $transactionService->initUserCoin($customer, $storyToken->merchant, CoinTypeEnum::LOCAL);
-        $transactionService->initUserCoin($customer, $storyToken->merchant, CoinTypeEnum::GLOBAL);
+        $transactionService->initUserCoin($customer, $storyToken->purchase->merchant, CoinTypeEnum::LOCAL);
+        $transactionService->initUserCoin($customer, $storyToken->purchase->merchant, CoinTypeEnum::GLOBAL);
 
         DB::transaction(function () use ($storyToken, $customer, $transactionService) {
             $story = new CustomerStory([
