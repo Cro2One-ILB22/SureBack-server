@@ -102,10 +102,12 @@ class UserService
                 $query->where('customer_id', '=', $user->id);
             }])
             ->paginate()
-            ->through(function ($merchant) {
+            ->through(function ($merchant) use ($userId) {
                 $merchant->individual_coins = $merchant->merchantCoins;
                 unset($merchant->merchantCoins);
-                return $merchant;
+                $merchant->customerIdFilter($userId);
+
+                return $merchant->append('is_favorited');
             });
     }
 
@@ -142,16 +144,9 @@ class UserService
 
         $merchant->individual_coins = $merchant->merchantCoins;
         unset($merchant->merchantCoins);
+        $merchant->customerIdFilter($user->id);
 
-        $distance = $merchant->distance;
-        if ($distance) {
-            foreach ($merchant->merchantDetail->addresses as $address) {
-                $address->location->setDistance($distance);
-                $address->location->append('distance');
-            }
-        }
-
-        return $merchant;
+        return $merchant->append('is_favorited');
     }
 
     function getCustomers(User $user, array $params = [], bool $hasFavoritedMe = null, bool $hasVisited = null)

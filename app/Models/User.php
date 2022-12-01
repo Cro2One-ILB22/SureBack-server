@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Services\DropboxService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -50,6 +51,14 @@ class User extends Authenticatable
         'coins' => 'integer',
     ];
 
+    protected ?int $customerId = null;
+
+    public function customerIdFilter($customerId): Model
+    {
+        $this->customerId = $customerId;
+        return $this;
+    }
+
     protected function password(): Attribute
     {
         return new Attribute(
@@ -62,6 +71,11 @@ class User extends Authenticatable
         return new Attribute(
             fn ($value) => (new DropboxService())->getTempImageLink("profile/{$value}")
         );
+    }
+
+    public function getIsFavoritedAttribute(): bool
+    {
+        return $this->customersWhoFavoriteMe()->where('customer_id', $this->customerId)->exists();
     }
 
     /**
