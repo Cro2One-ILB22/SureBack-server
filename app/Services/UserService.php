@@ -54,7 +54,7 @@ class UserService
         }
 
         return $merchants
-            ->with('merchantDetail')
+            ->with('merchantDetail.addresses.location')
             ->with(['merchantCoins' => function ($query) use ($user) {
                 $query->where('customer_id', '=', $user->id);
             }]);

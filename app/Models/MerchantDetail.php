@@ -58,4 +58,9 @@ class MerchantDetail extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function addresses()
+    {
+        return $this->morphMany(Address::class, 'addressable');
+    }
 }

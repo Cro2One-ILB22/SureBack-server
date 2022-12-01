@@ -136,6 +136,7 @@ class AuthController extends Controller
         $user = auth()->user();
         if ($user->roles->contains('slug', RoleEnum::MERCHANT)) {
             $user->merchantDetail->makeHidden(['user', 'user_id', 'created_at', 'updated_at']);
+            $user->load('merchantDetail.addresses.location');
         }
         $roles = $user->roles->pluck('slug');
         unset($user->roles);

@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
+use App\Http\Requests\UpdateLocation;
 use App\Http\Requests\UpdateMerchantDetailRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Location;
 use App\Models\MerchantDetail;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class UserController extends Controller
@@ -56,7 +59,7 @@ class UserController extends Controller
             ->whereHas('roles', function ($query) {
                 $query->where('slug', RoleEnum::MERCHANT);
             })
-            ->with('merchantDetail', 'merchantCoins')
+            ->with('merchantDetail.addresses.location', 'merchantCoins')
             ->with(['merchantCoins' => function ($query) use ($user) {
                 $query->where('customer_id', '=', $user->id);
             }])
@@ -155,5 +158,45 @@ class UserController extends Controller
         $merchantDetail = auth()->user()->merchantDetail;
         $merchantDetail->update($request->validated());
         return response()->json($merchantDetail);
+    }
+
+    public function updateLocation(UpdateLocation $request)
+    {
+        $user = auth()->user();
+        DB::transaction(function () use ($user, $request) {
+            if (!$user->addresses->first()) {
+                $location = Location::create($request->validated());
+                $user->addresses()->updateOrCreate([
+                    'addressable_id' => $user->id,
+                    'addressable_type' => User::class,
+                ], [
+                    'location_id' => $location->id,
+                ]);
+            } else {
+                $user->addresses()->first()->location()->update($request->validated());
+            }
+        });
+
+        return response()->json($user->load('addresses.location'));
+    }
+
+    public function updateMerchantLocation(UpdateLocation $request)
+    {
+        $user = auth()->user();
+        DB::transaction(function () use ($user, $request) {
+            if (!$user->merchantDetail->addresses->first()) {
+                $location = Location::create($request->validated());
+                $user->merchantDetail->addresses()->updateOrCreate([
+                    'addressable_id' => $user->merchantDetail->id,
+                    'addressable_type' => MerchantDetail::class,
+                ], [
+                    'location_id' => $location->id,
+                ]);
+            } else {
+                $user->merchantDetail->addresses()->first()->location()->update($request->validated());
+            }
+        });
+
+        return response()->json($user->load('merchantDetail.addresses.location'));
     }
 }

@@ -146,4 +146,9 @@ class User extends Authenticatable
     {
         return $this->roles()->where('slug', 'customer')->exists();
     }
+
+    public function addresses()
+    {
+        return $this->morphMany(Address::class, 'addressable');
+    }
 }
