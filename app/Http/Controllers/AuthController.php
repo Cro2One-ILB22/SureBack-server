@@ -19,6 +19,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AuthController extends Controller
 {
@@ -49,6 +50,8 @@ class AuthController extends Controller
             return response()->json($otpResponse);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 

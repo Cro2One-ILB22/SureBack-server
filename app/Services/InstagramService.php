@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class InstagramService
@@ -98,26 +99,68 @@ class InstagramService
 
         // InstagramService::ssoUsers($headers, $cookies);
 
-        if (!$response->successful()) {
-            Log::error($response->body());
-            if ($auth) {
-                $account->is_active = false;
-                $account->save();
-                return InstagramService::callAPI($method, $path, $queries, $headers, $body, $auth, $username);
-            }
-            throw new BadRequestException('Under maintenance');
-        }
-
         if ($auth) {
-            if (!$response->json()) {
-                $account->is_active = false;
-            }
             $account->last_used_at = now();
             $account->used_count += 1;
             $account->save();
-            if (!$response->json()) {
-                return InstagramService::callAPI($method, $path, $queries, $headers, $body, $auth, $username);
+        }
+
+        if (!$response->successful()) {
+            if ($response->status() === 404) {
+                return throw new NotFoundHttpException('Not found');
             }
+
+            Log::error('Instagram API Error', [
+                'method' => $method,
+                'path' => $path,
+                'queries' => $queries,
+                'headers' => $headers,
+                'account' => $account->username ?? null,
+                'response' => $response->json(),
+                'status' => $response->status(),
+            ]);
+
+            // [
+            // "message" => "Please wait a few minutes before you try again."
+            // "require_login" => true
+            // "status" => "fail"
+            // ]
+            // {
+            //     "message": "checkpoint_required",
+            //     "checkpoint_url": "https://i.instagram.com/challenge/?next=/api/v1/users/web_profile_info/%253Fusername%253Dsureback",
+            //     "lock": true,
+            //     "flow_render_type": 0,
+            //     "status": "fail"
+            // }
+            $responseJson = $response->json();
+            if (
+                $response->status() === 429
+                || ($responseJson
+                    && (array_key_exists('require_login', $responseJson)
+                        || array_key_exists('checkpoint_url', $responseJson)))
+            ) {
+                if ($auth) {
+                    info("Deactivating account $account->username");
+                    $account->is_active = false;
+                    $account->save();
+                    return InstagramService::callAPI($method, $path, $queries, $headers, $body, $auth, $username);
+                }
+                throw new BadRequestException('Under maintenance');
+            }
+            if ($response->status() === 400) {
+                throw new BadRequestException('Under maintenance');
+            }
+        }
+
+        if (!$response->json()) {
+            Log::error('Instagram cannot parse JSON', [
+                'method' => $method,
+                'path' => $path,
+                'queries' => $queries,
+                'headers' => $headers,
+                'account' => $account->username ?? null,
+                'status' => $response->status(),
+            ]);
         }
 
         return $response->json();
@@ -148,7 +191,7 @@ class InstagramService
                 $user->save();
             }
         } catch (Throwable $e) {
-            info($e);
+            Log::error($e);
         }
     }
 

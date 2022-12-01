@@ -17,6 +17,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class InstagramController extends Controller
 {
@@ -42,6 +43,8 @@ class InstagramController extends Controller
             return response()->json($profile);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 
@@ -52,6 +55,8 @@ class InstagramController extends Controller
             return response()->json($user);
         } catch (BadRequestException $e) {
             return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 
