@@ -198,4 +198,25 @@ class UserController extends Controller
 
         return response()->json($user->load('merchantDetail.addresses.location'));
     }
+
+    public function favoriteMerchant($id)
+    {
+        $user = auth()->user();
+        $merchant = User::where('id', $id)
+            ->whereHas('roles', function ($query) {
+                $query->where('slug', RoleEnum::MERCHANT);
+            })
+            ->first();
+
+        if (!$merchant) {
+            return response()->json([
+                'message' => 'Merchant not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $user->favoriteMerchantsAsCustomer()->toggle($merchant);
+        $merchant->customerIdFilter($user->id)->is_favorited;
+
+        return response()->json($merchant->append('is_favorited'));
+    }
 }

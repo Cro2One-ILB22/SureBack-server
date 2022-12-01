@@ -56,6 +56,7 @@ Route::group([
 ], function ($router) {
     Route::get('', [UserController::class, 'merchants']);
     Route::get('{id}', [UserController::class, 'merchant']);
+    Route::post('{id}/favorite', [UserController::class, 'favoriteMerchant']);
 });
 
 Route::group([
