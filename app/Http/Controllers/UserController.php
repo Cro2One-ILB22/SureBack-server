@@ -32,6 +32,7 @@ class UserController extends Controller
             'is_visited' => 'boolean',
             'latitude' => 'numeric',
             'longitude' => 'numeric',
+            'radius' => 'numeric',
         ];
         $validator = request()->validate($rules);
         $params = request()->except(array_keys($rules));
@@ -40,14 +41,11 @@ class UserController extends Controller
         $latitude = $validator['latitude'] ?? null;
         $longitude = $validator['longitude'] ?? null;
         $location = $latitude && $longitude ? [$latitude, $longitude] : [];
+        $radius = $validator['radius'] ?? null;
+        $user = auth()->user();
+
         try {
-            $merchants = $this->userService->getMerchants(auth()->user(), $params, $isFavorite, $isVisited, $location)
-                ->paginate()
-                ->through(function ($merchant) {
-                    $merchant->individual_coins = $merchant->merchantCoins;
-                    unset($merchant->merchantCoins);
-                    return $merchant;
-                });
+            $merchants = $this->userService->getMerchants($user, $params, $isFavorite, $isVisited, $location, $radius);
         } catch (BadRequestException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -59,27 +57,23 @@ class UserController extends Controller
 
     public function merchant($id)
     {
+        $validator = request()->validate([
+            'latitude' => 'numeric',
+            'longitude' => 'numeric',
+        ]);
+        $latitude = $validator['latitude'] ?? null;
+        $longitude = $validator['longitude'] ?? null;
+        $location = $latitude && $longitude ? [$latitude, $longitude] : [];
         $user = auth()->user();
-        $merchant = User::where('id', $id)
-            ->whereHas('roles', function ($query) {
-                $query->where('slug', RoleEnum::MERCHANT);
-            })
-            ->with('merchantDetail.addresses.location', 'merchantCoins')
-            ->with(['merchantCoins' => function ($query) use ($user) {
-                $query->where('customer_id', '=', $user->id);
-            }])
-            ->first();
 
-        if (!$merchant) {
+        try {
+            $merchant = $this->userService->getMerchant($user, $id, $location);
+            return response()->json($merchant);
+        } catch (BadRequestException $e) {
             return response()->json([
-                'message' => 'Merchant not found',
-            ], Response::HTTP_NOT_FOUND);
+                'message' => $e->getMessage(),
+            ], Response::HTTP_BAD_REQUEST);
         }
-
-        $merchant->individual_coins = $merchant->merchantCoins;
-        unset($merchant->merchantCoins);
-
-        return response()->json($merchant);
     }
 
     /**

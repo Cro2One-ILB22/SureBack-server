@@ -3,13 +3,25 @@
 namespace App\Services;
 
 use App\Enums\RoleEnum;
+use App\Models\MerchantDetail;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class UserService
 {
-    function getMerchants(User $user, array $params = [], bool $isFavorite = null, bool $isVisited = null, array $location = [])
+    public function __construct()
+    {
+        $this->haversine = '(6371 * acos(
+                                cos(radians(?))
+                                * cos(radians(latitude))
+                                * cos(radians(longitude) - radians(?))
+                                + sin(radians(?))
+                                * sin(radians(latitude))
+                            ))';
+    }
+
+    function getMerchants(User $user, array $params = [], bool $isFavorite = null, bool $isVisited = null, array $location = [], float $radius = null)
     {
         $userId = $user->id;
         $merchants = User::whereHas('roles', function ($query) {
@@ -41,6 +53,8 @@ class UserService
             }
         }
 
+        $merchants = $merchants->with('merchantDetail.addresses.location');
+
         if (count($location) === 2) {
             $latitude = $location[0];
             $longitude = $location[1];
@@ -48,10 +62,26 @@ class UserService
                 throw new BadRequestException('Invalid latitude or longitude');
             }
 
-            // where location is within 10km radius
             $merchants = $merchants
-                ->whereHas('merchantDetail.addresses.location', function ($query) use ($latitude, $longitude) {
-                    $query->whereRaw("ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) < 10000", [$longitude, $latitude]);
+                ->orderBy(
+                    MerchantDetail::whereColumn('merchant_details.id', 'users.id')
+                        ->join('addresses', function ($join) {
+                            $join->on('addresses.addressable_id', '=', 'merchant_details.id')
+                                ->where('addresses.addressable_type', '=', MerchantDetail::class);
+                        })
+                        ->join('locations', 'locations.id', '=', 'addresses.location_id')
+                        ->selectRaw("{$this->haversine} as distance", [$latitude, $longitude, $latitude])
+                        ->limit(1),
+                )
+                ->with(['merchantDetail.addresses.location' => function ($query) use ($latitude, $longitude) {
+                    $query->withDistance($latitude, $longitude);
+                }])
+                ->whereHas('merchantDetail', function ($query) use ($latitude, $longitude, $radius) {
+                    $query->whereHas('addresses', function ($query) use ($latitude, $longitude, $radius) {
+                        $query->whereHas('location', function ($query) use ($latitude, $longitude, $radius) {
+                            $query->distance($latitude, $longitude, $radius);
+                        });
+                    });
                 });
         }
 
@@ -68,10 +98,60 @@ class UserService
         }
 
         return $merchants
-            ->with('merchantDetail.addresses.location')
             ->with(['merchantCoins' => function ($query) use ($user) {
                 $query->where('customer_id', '=', $user->id);
-            }]);
+            }])
+            ->paginate()
+            ->through(function ($merchant) {
+                $merchant->individual_coins = $merchant->merchantCoins;
+                unset($merchant->merchantCoins);
+                return $merchant;
+            });
+    }
+
+    function getMerchant(User $user, int $merchantId, array $location = [])
+    {
+        $merchant = User::whereHas('roles', function ($query) {
+            $query->where('slug', RoleEnum::MERCHANT);
+        })
+            ->where('id', $merchantId)
+            ->with('merchantDetail.addresses.location');
+
+        if (count($location) === 2) {
+            $latitude = $location[0];
+            $longitude = $location[1];
+            if (!is_numeric($latitude) || !is_numeric($longitude)) {
+                throw new BadRequestException('Invalid latitude or longitude');
+            }
+
+            $merchant = $merchant
+                ->with(['merchantDetail.addresses.location' => function ($query) use ($latitude, $longitude) {
+                    $query->withDistance($latitude, $longitude);
+                }]);
+        }
+
+        $merchant = $merchant->with('merchantCoins')
+            ->with(['merchantCoins' => function ($query) use ($user) {
+                $query->where('customer_id', '=', $user->id);
+            }])
+            ->first();
+
+        if (!$merchant) {
+            throw new BadRequestException('Merchant not found');
+        }
+
+        $merchant->individual_coins = $merchant->merchantCoins;
+        unset($merchant->merchantCoins);
+
+        $distance = $merchant->distance;
+        if ($distance) {
+            foreach ($merchant->merchantDetail->addresses as $address) {
+                $address->location->setDistance($distance);
+                $address->location->append('distance');
+            }
+        }
+
+        return $merchant;
     }
 
     function getCustomers(User $user, array $params = [], bool $hasFavoritedMe = null, bool $hasVisited = null)
