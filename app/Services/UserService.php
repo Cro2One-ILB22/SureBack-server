@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class UserService
 {
-    function getMerchants(User $user, array $params = [], bool $isFavorite = null, bool $isVisited = null)
+    function getMerchants(User $user, array $params = [], bool $isFavorite = null, bool $isVisited = null, array $location = [])
     {
         $userId = $user->id;
         $merchants = User::whereHas('roles', function ($query) {
@@ -39,6 +39,20 @@ class UserService
                         $query->where('customer_id', $userId);
                     });
             }
+        }
+
+        if (count($location) === 2) {
+            $latitude = $location[0];
+            $longitude = $location[1];
+            if (!is_numeric($latitude) || !is_numeric($longitude)) {
+                throw new BadRequestException('Invalid latitude or longitude');
+            }
+
+            // where location is within 10km radius
+            $merchants = $merchants
+                ->whereHas('merchantDetail.addresses.location', function ($query) use ($latitude, $longitude) {
+                    $query->whereRaw("ST_Distance_Sphere(point(longitude, latitude), point(?, ?)) < 10000", [$longitude, $latitude]);
+                });
         }
 
         foreach ($params as $key => $value) {

@@ -30,13 +30,18 @@ class UserController extends Controller
         $rules = [
             'is_favorite' => 'boolean',
             'is_visited' => 'boolean',
+            'latitude' => 'numeric',
+            'longitude' => 'numeric',
         ];
         $validator = request()->validate($rules);
         $params = request()->except(array_keys($rules));
         $isFavorite = $validator['is_favorite'] ?? null;
         $isVisited = $validator['is_visited'] ?? null;
+        $latitude = $validator['latitude'] ?? null;
+        $longitude = $validator['longitude'] ?? null;
+        $location = $latitude && $longitude ? [$latitude, $longitude] : [];
         try {
-            $merchants = $this->userService->getMerchants(auth()->user(), $params, $isFavorite, $isVisited)
+            $merchants = $this->userService->getMerchants(auth()->user(), $params, $isFavorite, $isVisited, $location)
                 ->paginate()
                 ->through(function ($merchant) {
                     $merchant->individual_coins = $merchant->merchantCoins;
