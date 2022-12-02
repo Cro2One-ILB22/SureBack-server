@@ -5,24 +5,29 @@ on:
     workflows: ["Laravel"]
     types:
       - completed
+    branches:
+      - main
+      - staging
+
+env:
+  APP_DIR: ${{ secrets.APP_DIR }}
+  GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
 
 jobs:
-  deploy:
+  deploy-dev:
     permissions:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     env:
-      APP_DIR: ${{ secrets.APP_DIR }}
-      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
       # SSL_CERT: ${{ secrets.SSL_CERT }}
       # SSL_KEY: ${{ secrets.SSL_KEY }}
       FPM_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-fpm_server
       WEBSERVER_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-web_server
       CRON_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-cron
       FRONTEND_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-frontend
-    steps:
+    steps: &deploy-steps
       - uses: actions/checkout@v3
       - name: "Build Docker Image"
         run: |
@@ -43,3 +48,15 @@ jobs:
         run: |
           docker push $FPM_IMAGE
           docker push $WEBSERVER_IMAGE
+  deploy-staging:
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    if: ${{ (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging') }}
+    env:
+      FPM_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-fpm_server-staging
+      WEBSERVER_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-web_server-staging
+      CRON_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-cron-staging
+      FRONTEND_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-frontend-staging
+    steps: *deploy-steps

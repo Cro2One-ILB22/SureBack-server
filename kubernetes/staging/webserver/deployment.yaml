@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sureback-webserver
+  labels:
+    tier: backend
+    layer: webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: backend
+      layer: webserver
+  template:
+    metadata:
+      labels:
+        tier: backend
+        layer: webserver
+    spec:
+      containers:
+        - name: webserver
+          image: asia-southeast2-docker.pkg.dev/sureback-ilb22/sureback/sureback-web_server-staging:latest
+          # imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          env:
+            # Inject the FPM Host as we did with Docker Compose
+            - name: FPM_HOST
+              value: sureback-fpm:9000
+      initContainers:
+        - name: wait-for-fpm
+          image: busybox
+          command:
+            [
+              "sh",
+              "-c",
+              "until nc -z sureback-fpm 9000; do echo waiting for fpm; sleep 1; done;",
+            ]

@@ -5,6 +5,8 @@ on:
     workflows: ["Laravel"]
     types:
       - completed
+    branches:
+      - dev
 
 jobs:
   get-cloud-service:
