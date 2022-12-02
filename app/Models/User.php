@@ -73,7 +73,7 @@ class User extends Authenticatable
         );
     }
 
-    public function getIsFavoritedAttribute(): bool
+    public function getIsFavoriteAttribute(): bool
     {
         return $this->customersWhoFavoriteMe()->where('customer_id', $this->customerId)->exists();
     }

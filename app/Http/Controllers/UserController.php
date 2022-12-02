@@ -33,6 +33,7 @@ class UserController extends Controller
             'latitude' => 'numeric',
             'longitude' => 'numeric',
             'radius' => 'numeric',
+            'order_by' => 'string',
         ];
         $validator = request()->validate($rules);
         $params = request()->except(array_keys($rules));
@@ -42,10 +43,11 @@ class UserController extends Controller
         $longitude = $validator['longitude'] ?? null;
         $location = $latitude && $longitude ? [$latitude, $longitude] : [];
         $radius = $validator['radius'] ?? null;
+        $orderBy = $validator['order_by'] ?? null;
         $user = auth()->user();
 
         try {
-            $merchants = $this->userService->getMerchants($user, $params, $isFavorite, $isVisited, $location, $radius);
+            $merchants = $this->userService->getMerchants($user, $params, $isFavorite, $isVisited, $location, $radius, $orderBy);
         } catch (BadRequestException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -215,8 +217,8 @@ class UserController extends Controller
         }
 
         $user->favoriteMerchantsAsCustomer()->toggle($merchant);
-        $merchant->customerIdFilter($user->id)->is_favorited;
+        $merchant->customerIdFilter($user->id)->is_favorite;
 
-        return response()->json($merchant->append('is_favorited'));
+        return response()->json($merchant->append('is_favorite'));
     }
 }

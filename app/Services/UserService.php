@@ -21,7 +21,7 @@ class UserService
                             ))';
     }
 
-    function getMerchants(User $user, array $params = [], bool $isFavorite = null, bool $isVisited = null, array $location = [], float $radius = null)
+    function getMerchants(User $user, array $params = [], bool $isFavorite = null, bool $isVisited = null, array $location = [], float $radius = null, string $orderBy = null)
     {
         $userId = $user->id;
         $merchants = User::whereHas('roles', function ($query) {
@@ -85,6 +85,39 @@ class UserService
                 });
         }
 
+        if ($orderBy) {
+            $orderBy = explode(',', $orderBy);
+            foreach ($orderBy as $order) {
+                $order = explode(':', $order);
+                if (count($order) !== 2) {
+                    throw new BadRequestException('Invalid order by');
+                }
+                $column = $order[0];
+                $direction = $order[1];
+                if (!in_array($direction, ['asc', 'desc'])) {
+                    throw new BadRequestException('Invalid order by');
+                }
+                if (!Schema::hasColumn('users', $column)) {
+                    if ($column === 'is_favorite') {
+                        $merchants = $merchants
+                            ->withCount(['customersWhoFavoriteMe' => function ($query) use ($userId) {
+                                $query->where('customer_id', $userId);
+                            }]);
+                        $column = 'customers_who_favorite_me_count';
+                    } else if ($column === 'is_visited') {
+                        $merchants = $merchants
+                            ->withCount(['merchantCoins' => function ($query) use ($userId) {
+                                $query->where('customer_id', $userId);
+                            }]);
+                        $column = 'merchant_coins_count';
+                    } else {
+                        throw new BadRequestException('Invalid order by');
+                    }
+                }
+                $merchants = $merchants->orderBy($column, $direction);
+            }
+        }
+
         foreach ($params as $key => $value) {
             if (Schema::hasColumn('users', $key)) {
                 if ($key === 'name') {
@@ -107,7 +140,7 @@ class UserService
                 unset($merchant->merchantCoins);
                 $merchant->customerIdFilter($userId);
 
-                return $merchant->append('is_favorited');
+                return $merchant->append('is_favorite');
             });
     }
 
@@ -146,7 +179,7 @@ class UserService
         unset($merchant->merchantCoins);
         $merchant->customerIdFilter($user->id);
 
-        return $merchant->append('is_favorited');
+        return $merchant->append('is_favorite');
     }
 
     function getCustomers(User $user, array $params = [], bool $hasFavoritedMe = null, bool $hasVisited = null)
