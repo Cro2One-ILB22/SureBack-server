@@ -27,7 +27,7 @@ jobs:
       WEBSERVER_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-web_server
       CRON_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-cron
       FRONTEND_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-frontend
-    steps: &deploy-steps
+    steps:
       - uses: actions/checkout@v3
       - name: "Build Docker Image"
         run: |
@@ -59,4 +59,24 @@ jobs:
       WEBSERVER_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-web_server-staging
       CRON_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-cron-staging
       FRONTEND_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-frontend-staging
-    steps: *deploy-steps
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Build Docker Image"
+        run: |
+          docker-compose build
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - name: "Configure Docker to use the gcloud command-line tool as a credential helper"
+        run: |-
+          gcloud --quiet auth configure-docker ${{ secrets.GKE_REGION }}-docker.pkg.dev
+      - name: "Push Docker Image"
+        run: |
+          docker push $FPM_IMAGE
+          docker push $WEBSERVER_IMAGE
