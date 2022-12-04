@@ -69,30 +69,19 @@ class UserService
                         $query->withDistance($latitude, $longitude);
                     }]);
                 }
-            }]);
+            }])
+            ->withIsFavoriteMerchant($userId);
 
-        if (count($location) === 2) {
-            $latitude = $location[0];
-            $longitude = $location[1];
-
-            $merchants = $merchants
-                ->orderBy(
-                    MerchantDetail::whereColumn('merchant_details.id', 'users.id')
-                        ->join('addresses', function ($join) {
-                            $join->on('addresses.addressable_id', '=', 'merchant_details.id')
-                                ->where('addresses.addressable_type', '=', MerchantDetail::class);
-                        })
-                        ->join('locations', 'locations.id', '=', 'addresses.location_id')
-                        ->selectRaw("{$this->haversine} as distance", [$latitude, $longitude, $latitude])
-                        ->limit(1),
-                )
-                ->whereHas('merchantDetail', function ($query) use ($latitude, $longitude, $radius) {
-                    $query->whereHas('addresses', function ($query) use ($latitude, $longitude, $radius) {
-                        $query->whereHas('location', function ($query) use ($latitude, $longitude, $radius) {
-                            $query->distance($latitude, $longitude, $radius);
-                        });
-                    });
-                });
+        foreach ($params as $key => $value) {
+            if (Schema::hasColumn('users', $key)) {
+                if ($key === 'name') {
+                    $value = $value ?? '';
+                }
+                $value = $value !== null ? strtolower($value) : '';
+                $merchants = $merchants->whereRaw("LOWER($key) LIKE ?", ['%' . $value . '%']);
+            } else {
+                throw new BadRequestException("Invalid parameter: $key");
+            }
         }
 
         if ($orderBy) {
@@ -109,11 +98,6 @@ class UserService
                 }
                 if (!Schema::hasColumn('users', $column)) {
                     if ($column === 'is_favorite') {
-                        $merchants = $merchants
-                            ->withCount(['customersWhoFavoriteMe' => function ($query) use ($userId) {
-                                $query->where('customer_id', $userId);
-                            }]);
-                        $column = 'customers_who_favorite_me_count';
                     } else if ($column === 'is_visited') {
                         $merchants = $merchants
                             ->withCount(['merchantCoins' => function ($query) use ($userId) {
@@ -128,16 +112,28 @@ class UserService
             }
         }
 
-        foreach ($params as $key => $value) {
-            if (Schema::hasColumn('users', $key)) {
-                if ($key === 'name') {
-                    $value = $value ?? '';
-                }
-                $value = $value !== null ? strtolower($value) : '';
-                $merchants = $merchants->whereRaw("LOWER($key) LIKE ?", ['%' . $value . '%']);
-            } else {
-                throw new BadRequestException("Invalid parameter: $key");
-            }
+        if (count($location) === 2) {
+            $latitude = $location[0];
+            $longitude = $location[1];
+
+            $merchants = $merchants
+                ->whereHas('merchantDetail', function ($query) use ($latitude, $longitude, $radius) {
+                    $query->whereHas('addresses', function ($query) use ($latitude, $longitude, $radius) {
+                        $query->whereHas('location', function ($query) use ($latitude, $longitude, $radius) {
+                            $query->distance($latitude, $longitude, $radius);
+                        });
+                    });
+                })
+                ->orderBy(
+                    MerchantDetail::whereColumn('merchant_details.user_id', 'users.id')
+                        ->join('addresses', function ($join) {
+                            $join->on('addresses.addressable_id', '=', 'merchant_details.id')
+                                ->where('addresses.addressable_type', '=', MerchantDetail::class);
+                        })
+                        ->join('locations', 'locations.id', '=', 'addresses.location_id')
+                        ->selectRaw("{$this->haversine} as distance", [$latitude, $longitude, $latitude])
+                        ->limit(1),
+                );
         }
 
         return $merchants
@@ -145,12 +141,11 @@ class UserService
                 $query->where('customer_id', '=', $user->id);
             }])
             ->paginate()
-            ->through(function ($merchant) use ($userId) {
+            ->through(function ($merchant) {
                 $merchant->individual_coins = $merchant->merchantCoins;
                 unset($merchant->merchantCoins);
-                $merchant->customerIdFilter($userId);
 
-                return $merchant->append('is_favorite');
+                return $merchant;
             });
     }
 
@@ -181,6 +176,7 @@ class UserService
             ->with(['merchantCoins' => function ($query) use ($user) {
                 $query->where('customer_id', '=', $user->id);
             }])
+            ->withIsFavoriteMerchant($user->id)
             ->first();
 
         if (!$merchant) {
@@ -189,9 +185,8 @@ class UserService
 
         $merchant->individual_coins = $merchant->merchantCoins;
         unset($merchant->merchantCoins);
-        $merchant->customerIdFilter($user->id);
 
-        return $merchant->append('is_favorite');
+        return $merchant;
     }
 
     function getCustomers(User $user, array $params = [], bool $hasFavoritedMe = null, bool $hasVisited = null)

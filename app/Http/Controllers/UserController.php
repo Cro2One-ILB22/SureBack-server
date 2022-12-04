@@ -208,6 +208,7 @@ class UserController extends Controller
             ->whereHas('roles', function ($query) {
                 $query->where('slug', RoleEnum::MERCHANT);
             })
+            ->withIsFavoriteMerchant($user->id)
             ->first();
 
         if (!$merchant) {
@@ -217,8 +218,8 @@ class UserController extends Controller
         }
 
         $user->favoriteMerchantsAsCustomer()->toggle($merchant);
-        $merchant->customerIdFilter($user->id)->is_favorite;
+        $merchant->is_favorite = !$merchant->is_favorite;
 
-        return response()->json($merchant->append('is_favorite'));
+        return response()->json($merchant);
     }
 }

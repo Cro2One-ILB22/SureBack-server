@@ -52,15 +52,8 @@ class User extends Authenticatable
     protected $casts = [
         'balance' => 'integer',
         'coins' => 'integer',
+        'is_favorite' => 'boolean',
     ];
-
-    protected ?int $customerId = null;
-
-    public function customerIdFilter($customerId): Model
-    {
-        $this->customerId = $customerId;
-        return $this;
-    }
 
     protected function password(): Attribute
     {
@@ -74,11 +67,6 @@ class User extends Authenticatable
         return new Attribute(
             fn ($value) => (new DropboxService())->getTempImageLink("profile/{$value}")
         );
-    }
-
-    public function getIsFavoriteAttribute(): bool
-    {
-        return $this->customersWhoFavoriteMe()->where('customer_id', $this->customerId)->exists();
     }
 
     /**
@@ -167,6 +155,15 @@ class User extends Authenticatable
     public function addresses()
     {
         return $this->morphMany(Address::class, 'addressable');
+    }
+
+    public function scopeWithIsFavoriteMerchant($query, $customerId)
+    {
+        return $query->withCount([
+            'customersWhoFavoriteMe AS is_favorite' => function ($query) use ($customerId) {
+                $query->where('customer_id', $customerId);
+            },
+        ]);
     }
 
     /**
