@@ -16,7 +16,7 @@ class QRScanPurchaseRequest extends FormRequest
     {
         return [
             'merchant_id' => new Merchant,
-            'used_coins' => ['integer', 'nullable'],
+            'coins_used' => ['integer', 'nullable'],
             'is_requesting_for_token' => ['boolean', 'nullable'],
         ];
     }
@@ -24,7 +24,7 @@ class QRScanPurchaseRequest extends FormRequest
     public function setDefaultValues()
     {
         $this->merge([
-            'used_coins' => $this->used_coins ?? 0,
+            'coins_used' => $this->coins_used ?? 0,
             'is_requesting_for_token' => $this->is_requesting_for_token ?? false,
         ]);
     }

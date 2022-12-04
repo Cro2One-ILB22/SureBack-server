@@ -71,9 +71,9 @@ class TransactionService
         });
     }
 
-    function exchangeCoin(User $merchant, User $customer, int $usedCoins, Purchase $purchase)
+    function exchangeCoin(User $merchant, User $customer, int $coinsUsed, Purchase $purchase)
     {
-        return DB::transaction(function () use ($merchant, $customer, $usedCoins, $purchase) {
+        return DB::transaction(function () use ($merchant, $customer, $coinsUsed, $purchase) {
             $userCoin = UserCoin::where('customer_id', $customer->id)
                 ->where('merchant_id', $merchant->id)
                 ->where('coin_type', CoinTypeEnum::LOCAL)
@@ -88,7 +88,7 @@ class TransactionService
 
             // customer
             $customerCoinTransaction = new Transaction([
-                'amount' => $usedCoins,
+                'amount' => $coinsUsed,
                 'accounting_entry' => AccountingEntryEnum::DEBIT,
             ]);
             $customerCoinTransaction->status()->associate($transactionStatus);
@@ -98,14 +98,14 @@ class TransactionService
             $customerCoinTransaction->save();
             $customerCoinLedger = new Ledger([
                 'before' => $customerCoin->outstanding,
-                'after' => $customerCoin->outstanding - $usedCoins,
+                'after' => $customerCoin->outstanding - $coinsUsed,
             ]);
             $customerCoinLedger->transaction()->associate($customerCoinTransaction);
             $customerCoinLedger->save();
 
             // merchant
             $merchantCoinTransaction = new Transaction([
-                'amount' => $usedCoins,
+                'amount' => $coinsUsed,
                 'accounting_entry' => AccountingEntryEnum::CREDIT,
             ]);
             $merchantCoinTransaction->status()->associate($transactionStatus);
@@ -115,7 +115,7 @@ class TransactionService
             $merchantCoinTransaction->save();
             $merchantCoinLedger = new Ledger([
                 'before' => $merchantCoin->outstanding,
-                'after' => $merchantCoin->outstanding - $usedCoins,
+                'after' => $merchantCoin->outstanding - $coinsUsed,
             ]);
             $merchantCoinLedger->transaction()->associate($merchantCoinTransaction);
             $merchantCoinLedger->save();
@@ -128,17 +128,17 @@ class TransactionService
             $coinExchange->purchase()->associate($purchase);
             $coinExchange->save();
 
-            $userCoin->exchanged += $usedCoins;
-            $userCoin->outstanding -= $usedCoins;
+            $userCoin->exchanged += $coinsUsed;
+            $userCoin->outstanding -= $coinsUsed;
             $userCoin->save();
 
             $merchantCoin->update([
-                'exchanged' => $merchantCoin->exchanged + $usedCoins,
-                'outstanding' => $merchantCoin->outstanding - $usedCoins,
+                'exchanged' => $merchantCoin->exchanged + $coinsUsed,
+                'outstanding' => $merchantCoin->outstanding - $coinsUsed,
             ]);
             $customerCoin->update([
-                'exchanged' => $customerCoin->exchanged + $usedCoins,
-                'outstanding' => $customerCoin->outstanding - $usedCoins,
+                'exchanged' => $customerCoin->exchanged + $coinsUsed,
+                'outstanding' => $customerCoin->outstanding - $coinsUsed,
             ]);
         });
     }
@@ -231,14 +231,14 @@ class TransactionService
         });
     }
 
-    function checkCoinsAvailability(User $user, $merchantId, $purchaseAmount, $usedCoins)
+    function checkCoinsAvailability(User $user, $merchantId, $purchaseAmount, $coinsUsed)
     {
         $customerCoins = $user->customerCoins()->where('merchant_id', $merchantId)->where('coin_type', CoinTypeEnum::LOCAL)->first();
 
-        if (!$customerCoins || $customerCoins->outstanding < $usedCoins) {
+        if (!$customerCoins || $customerCoins->outstanding < $coinsUsed) {
             throw new BadRequestException('Insufficient coins');
         }
-        if ($usedCoins > $purchaseAmount) {
+        if ($coinsUsed > $purchaseAmount) {
             throw new BadRequestException('Cannot use more coins than purchase amount');
         }
     }

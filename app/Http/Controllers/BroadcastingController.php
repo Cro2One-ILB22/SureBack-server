@@ -26,14 +26,14 @@ class BroadcastingController extends Controller
         $userId = auth()->user()->id;
         $validated = $request->validated();
         $merchantId = $validated['merchant_id'];
-        $usedCoins = (int) ($validated['used_coins'] ?? 0);
+        $coinsUsed = (int) ($validated['coins_used'] ?? 0);
         $isRequestingForToken = (bool) ($validated['is_requesting_for_token'] ?? false);
 
         broadcast(new QRScanPurchaseEvent(
             $merchantId,
             $userId,
             [
-                'used_coins' => $usedCoins,
+                'coins_used' => $coinsUsed,
                 'is_requesting_for_token' => $isRequestingForToken,
             ]
         ))->toOthers();

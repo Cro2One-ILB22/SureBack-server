@@ -83,18 +83,18 @@ class InstagramController extends Controller
         $validated = $request->validated();
         $purchaseAmount = $validated['purchase_amount'];
         $isRequestingForToken = $validated['is_requesting_for_token'] ?? false;
-        $usedCoins = $validated['used_coins'] ?? 0;
-        $paymentAmount = $purchaseAmount - $usedCoins;
+        $coinsUsed = $validated['coins_used'] ?? 0;
+        $paymentAmount = $purchaseAmount - $coinsUsed;
         $customer = User::where('id', $validated['customer_id'])->first();
 
         try {
-            $purchase = DB::transaction(function () use ($user, $customer, $purchaseAmount, $paymentAmount, $isRequestingForToken, $usedCoins,) {
+            $purchase = DB::transaction(function () use ($user, $customer, $purchaseAmount, $paymentAmount, $isRequestingForToken, $coinsUsed,) {
                 $transactionService = new TransactionService();
                 $purchase = $transactionService->createPurchase($user, $purchaseAmount, $paymentAmount);
 
-                if ($usedCoins > 0) {
-                    $transactionService->checkCoinsAvailability($customer, $user->id, $purchaseAmount, $usedCoins);
-                    $transactionService->exchangeCoin($user, $customer, $usedCoins, $purchase);
+                if ($coinsUsed > 0) {
+                    $transactionService->checkCoinsAvailability($customer, $user->id, $purchaseAmount, $coinsUsed);
+                    $transactionService->exchangeCoin($user, $customer, $coinsUsed, $purchase);
                 }
 
                 if ($isRequestingForToken) {
