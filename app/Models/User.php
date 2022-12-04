@@ -4,6 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enums\AccountingEntryEnum;
+use App\Enums\PaymentInstrumentEnum;
+use App\Enums\TransactionStatusEnum;
 use App\Services\DropboxService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -164,5 +167,79 @@ class User extends Authenticatable
     public function addresses()
     {
         return $this->morphMany(Address::class, 'addressable');
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function getOutstandingCoinsAttribute(): array
+    {
+        return [
+            'this_month' => $this->getCoinsDebit('this_month') - $this->getCoinsCredit('this_month'),
+            'this_week' => $this->getCoinsDebit('this_week') - $this->getCoinsCredit('this_week'),
+            'today' => $this->getCoinsDebit('today') - $this->getCoinsCredit('today'),
+        ];
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function getExchangedCoinsAttribute(): array
+    {
+        return [
+            'this_month' => $this->getCoinsCredit('this_month'),
+            'this_week' => $this->getCoinsCredit('this_week'),
+            'today' => $this->getCoinsCredit('today'),
+        ];
+    }
+
+    private function getCoinsDebit($period)
+    {
+        $transaction = $this->transactions()
+            ->where('accounting_entry', AccountingEntryEnum::DEBIT)
+            ->where('payment_instrument_id', PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first()->id)
+            ->where('transaction_status_id', TransactionStatus::where('slug', TransactionStatusEnum::SUCCESS)->first()->id);
+
+        switch ($period) {
+            case 'this_month':
+                $transaction->whereMonth('created_at', now()->month);
+                break;
+            case 'this_week':
+                $transaction->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                break;
+            case 'today':
+                $transaction->whereDate('created_at', now()->format('Y-m-d'));
+                break;
+        }
+
+        $transaction = $transaction
+            ->sum('amount');
+
+        return $transaction;
+    }
+
+    private function getCoinsCredit($period): int
+    {
+        $transaction = $this->transactions()
+            ->where('accounting_entry', AccountingEntryEnum::CREDIT)
+            ->where('payment_instrument_id', PaymentInstrument::where('slug', PaymentInstrumentEnum::COINS)->first()->id)
+            ->where('transaction_status_id', TransactionStatus::where('slug', TransactionStatusEnum::SUCCESS)->first()->id);
+
+        switch ($period) {
+            case 'this_month':
+                $transaction->whereMonth('created_at', now()->month);
+                break;
+            case 'this_week':
+                $transaction->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                break;
+            case 'today':
+                $transaction->whereDate('created_at', now()->format('Y-m-d'));
+                break;
+        }
+
+        $transaction = $transaction
+            ->sum('amount');
+
+        return $transaction;
     }
 }

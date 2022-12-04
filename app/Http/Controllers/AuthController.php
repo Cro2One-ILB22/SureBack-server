@@ -144,6 +144,8 @@ class AuthController extends Controller
         $roles = $user->roles->pluck('slug');
         unset($user->roles);
         $user->roles = $roles;
+        $user->outstanding_coins = $user->outstanding_coins;
+        $user->exchanged_coins = $user->exchanged_coins;
         return response()->json($user->load('coins'));
     }
 
