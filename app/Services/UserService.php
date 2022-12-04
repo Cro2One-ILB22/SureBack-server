@@ -53,14 +53,27 @@ class UserService
             }
         }
 
-        $merchants = $merchants->with('merchantDetail.addresses.location');
+        $merchants = $merchants
+            ->with(['merchantDetail' => function ($query) use ($userId, $location) {
+                $query->withLastTokenGeneratedForMeAt($userId);
+                $query->with('addresses.location');
+
+                if (count($location) === 2) {
+                    $latitude = $location[0];
+                    $longitude = $location[1];
+                    if (!is_numeric($latitude) || !is_numeric($longitude)) {
+                        throw new BadRequestException('Invalid latitude or longitude');
+                    }
+
+                    $query->with(['addresses.location' => function ($query) use ($latitude, $longitude) {
+                        $query->withDistance($latitude, $longitude);
+                    }]);
+                }
+            }]);
 
         if (count($location) === 2) {
             $latitude = $location[0];
             $longitude = $location[1];
-            if (!is_numeric($latitude) || !is_numeric($longitude)) {
-                throw new BadRequestException('Invalid latitude or longitude');
-            }
 
             $merchants = $merchants
                 ->orderBy(
@@ -73,9 +86,6 @@ class UserService
                         ->selectRaw("{$this->haversine} as distance", [$latitude, $longitude, $latitude])
                         ->limit(1),
                 )
-                ->with(['merchantDetail.addresses.location' => function ($query) use ($latitude, $longitude) {
-                    $query->withDistance($latitude, $longitude);
-                }])
                 ->whereHas('merchantDetail', function ($query) use ($latitude, $longitude, $radius) {
                     $query->whereHas('addresses', function ($query) use ($latitude, $longitude, $radius) {
                         $query->whereHas('location', function ($query) use ($latitude, $longitude, $radius) {
@@ -150,20 +160,22 @@ class UserService
             $query->where('slug', RoleEnum::MERCHANT);
         })
             ->where('id', $merchantId)
-            ->with('merchantDetail.addresses.location');
+            ->with(['merchantDetail' => function ($query) use ($user, $location) {
+                $query->withLastTokenGeneratedForMeAt($user->id);
+                $query->with('addresses.location');
 
-        if (count($location) === 2) {
-            $latitude = $location[0];
-            $longitude = $location[1];
-            if (!is_numeric($latitude) || !is_numeric($longitude)) {
-                throw new BadRequestException('Invalid latitude or longitude');
-            }
+                if (count($location) === 2) {
+                    $latitude = $location[0];
+                    $longitude = $location[1];
+                    if (!is_numeric($latitude) || !is_numeric($longitude)) {
+                        throw new BadRequestException('Invalid latitude or longitude');
+                    }
 
-            $merchant = $merchant
-                ->with(['merchantDetail.addresses.location' => function ($query) use ($latitude, $longitude) {
-                    $query->withDistance($latitude, $longitude);
-                }]);
-        }
+                    $query->with(['addresses.location' => function ($query) use ($latitude, $longitude) {
+                        $query->withDistance($latitude, $longitude);
+                    }]);
+                }
+            }]);
 
         $merchant = $merchant->with('merchantCoins')
             ->with(['merchantCoins' => function ($query) use ($user) {

@@ -26,6 +26,8 @@ class MerchantDetail extends Model
 
     protected $appends = [
         'todays_token_count',
+        // 'last_token_generated_at',
+        'cooldown_until',
     ];
 
     protected $hidden = [
@@ -43,6 +45,12 @@ class MerchantDetail extends Model
         'cashback_calculation_method' => CashbackCalculationMethodEnum::class,
     ];
 
+    protected $dates = [
+        // 'last_token_generated_at',
+        'last_token_generated_for_me_at',
+        'cooldown_until',
+    ];
+
     public function todaysTokenCount(): Attribute
     {
         return new Attribute(
@@ -54,6 +62,24 @@ class MerchantDetail extends Model
         );
     }
 
+    // public function getLastTokenGeneratedAtAttribute()
+    // {
+    //     return $this->user
+    //         ->purchasesAsMerchant()
+    //         ->whereHas('token')
+    //         ->latest('created_at')
+    //         ->first()
+    //         ->created_at
+    //         ?? null;
+    // }
+
+    public function getCooldownUntilAttribute()
+    {
+        return $this->last_token_generated_for_me_at
+            ? $this->last_token_generated_for_me_at->addDays(2)
+            : null;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -62,5 +88,18 @@ class MerchantDetail extends Model
     public function addresses()
     {
         return $this->morphMany(Address::class, 'addressable');
+    }
+
+    public function scopeWithLastTokenGeneratedForMeAt($query, $customerId)
+    {
+        return $query->addSelect([
+            'last_token_generated_for_me_at' => Purchase::query()
+                ->select('created_at')
+                ->whereColumn('merchant_id', 'merchant_details.user_id')
+                ->whereHas('token')
+                ->where('customer_id', $customerId)
+                ->latest('created_at')
+                ->limit(1)
+        ]);
     }
 }
