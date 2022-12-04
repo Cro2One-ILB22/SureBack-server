@@ -84,11 +84,12 @@ class InstagramController extends Controller
         $purchaseAmount = $validated['purchase_amount'];
         $isRequestingForToken = $validated['is_requesting_for_token'] ?? false;
         $coinsUsed = $validated['coins_used'] ?? 0;
-        $paymentAmount = $purchaseAmount - $coinsUsed;
         $customer = User::where('id', $validated['customer_id'])->first();
 
         try {
-            $purchase = DB::transaction(function () use ($user, $customer, $purchaseAmount, $paymentAmount, $isRequestingForToken, $coinsUsed,) {
+            $purchase = DB::transaction(function () use ($user, $customer, $purchaseAmount, $isRequestingForToken, $coinsUsed) {
+                $coinsUsed = floor($coinsUsed / 1000) * 1000;
+                $paymentAmount = $purchaseAmount - $coinsUsed;
                 $transactionService = new TransactionService();
                 $purchase = $transactionService->createPurchase($user, $purchaseAmount, $paymentAmount);
 
