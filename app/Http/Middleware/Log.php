@@ -16,7 +16,6 @@ class Log
      */
     public function handle(Request $request, Closure $next)
     {
-        info('Request: ' . $request);
         return $next($request);
     }
 
@@ -29,7 +28,17 @@ class Log
      */
     public function terminate(Request $request, $response)
     {
-        info('Response: ' . $response);
+        info('Request: ' . $request);
+        $responseJson = $response instanceof \Illuminate\Http\JsonResponse ? $response : null;
+        if ($responseJson) {
+            info('Response JSON: ' . $responseJson);
+        } else {
+            info('Response HTML code: ' . $response->status());
+        }
+        if (defined('LARAVEL_START')) {
+            info('Request took ' . (microtime(true) - LARAVEL_START) . ' seconds' . PHP_EOL);
+        }
+
         return $response;
     }
 }
