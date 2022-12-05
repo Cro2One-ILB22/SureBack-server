@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Throwable;
@@ -71,7 +71,7 @@ class InstagramService
                 throw new ServiceUnavailableHttpException('Under maintenance');
             }
             if (!$account->is_active) {
-                throw new BadRequestException('Try registering again');
+                throw new BadRequestHttpException('Try registering again');
             }
 
             $csrfToken = $account->csrf_token;
@@ -333,7 +333,7 @@ class InstagramService
         $instagramProfile = $this->getProfileInfo($username);
 
         if (!$instagramProfile) {
-            throw new BadRequestException('Instagram profile not found');
+            throw new BadRequestHttpException('Instagram profile not found');
         }
 
         $instagramId = $instagramProfile['id'];
@@ -342,7 +342,7 @@ class InstagramService
         ]);
 
         if ($validator->fails()) {
-            throw new BadRequestException('Instagram already used');
+            throw new BadRequestHttpException('Instagram already used');
         }
         return $instagramId;
     }
@@ -351,7 +351,7 @@ class InstagramService
     {
         $otp = $this->getOTPFrom($instagramId, $instagramToDM);
         if (!$otp || !is_numeric($otp)) {
-            throw new BadRequestException('OTP not found');
+            throw new BadRequestHttpException('OTP not found');
         }
 
         $otpService = new OTPService();
@@ -361,7 +361,7 @@ class InstagramService
         ];
 
         if (!$otpService->verifyInstagramOTP($reqData)) {
-            throw new BadRequestException('Invalid OTP');
+            throw new BadRequestHttpException('Invalid OTP');
         }
     }
 

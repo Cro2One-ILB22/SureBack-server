@@ -20,7 +20,7 @@ use App\Models\TransactionStatus;
 use App\Models\User;
 use App\Models\UserCoin;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class TransactionService
 {
@@ -236,10 +236,10 @@ class TransactionService
         $customerCoins = $user->customerCoins()->where('merchant_id', $merchantId)->where('coin_type', CoinTypeEnum::LOCAL)->first();
 
         if (!$customerCoins || $customerCoins->outstanding < $coinsUsed) {
-            throw new BadRequestException('Insufficient coins');
+            throw new BadRequestHttpException('Insufficient coins');
         }
         if ($coinsUsed > $purchaseAmount) {
-            throw new BadRequestException('Cannot use more coins than purchase amount');
+            throw new BadRequestHttpException('Cannot use more coins than purchase amount');
         }
     }
 

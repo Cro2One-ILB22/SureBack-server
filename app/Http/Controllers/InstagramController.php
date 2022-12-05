@@ -17,8 +17,6 @@ use App\Services\TransactionService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class InstagramController extends Controller
 {
@@ -39,26 +37,14 @@ class InstagramController extends Controller
 
     public function profile($username)
     {
-        try {
-            $profile = $this->instagramService->getProfile($username);
-            return response()->json($profile);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-        }
+        $profile = $this->instagramService->getProfile($username);
+        return response()->json($profile);
     }
 
     public function user($id)
     {
-        try {
-            $user = $this->instagramService->getUserInfo($id);
-            return response()->json($user);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-        }
+        $user = $this->instagramService->getUserInfo($id);
+        return response()->json($user);
     }
 
     public function generateToken(GenerateTokenRequest $request)
@@ -67,14 +53,10 @@ class InstagramController extends Controller
         $validated = $request->validated();
         $purchaseAmount = $validated['purchase_amount'];
         return DB::transaction(function () use ($user, $purchaseAmount) {
-            try {
-                $transactionService = new TransactionService();
-                $purchase = $transactionService->createPurchase($user, $purchaseAmount, $purchaseAmount);
-                $token = $this->storyService->generateToken(auth()->user(), $purchase);
-                return response()->json($token);
-            } catch (BadRequestException $e) {
-                return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-            }
+            $transactionService = new TransactionService();
+            $purchase = $transactionService->createPurchase($user, $purchaseAmount, $purchaseAmount);
+            $token = $this->storyService->generateToken(auth()->user(), $purchase);
+            return response()->json($token);
         });
     }
 
@@ -87,37 +69,33 @@ class InstagramController extends Controller
         $coinsUsed = $validated['coins_used'] ?? 0;
         $customer = User::where('id', $validated['customer_id'])->first();
 
-        try {
-            $purchase = DB::transaction(function () use ($user, $customer, $purchaseAmount, $isRequestingForToken, $coinsUsed) {
-                $coinsUsed = floor($coinsUsed / 1000) * 1000;
-                $paymentAmount = $purchaseAmount - $coinsUsed;
-                $transactionService = new TransactionService();
-                $purchase = $transactionService->createPurchase($user, $purchaseAmount, $paymentAmount);
-                $purchaseLoad = [];
+        $purchase = DB::transaction(function () use ($user, $customer, $purchaseAmount, $isRequestingForToken, $coinsUsed) {
+            $coinsUsed = floor($coinsUsed / 1000) * 1000;
+            $paymentAmount = $purchaseAmount - $coinsUsed;
+            $transactionService = new TransactionService();
+            $purchase = $transactionService->createPurchase($user, $purchaseAmount, $paymentAmount);
+            $purchaseLoad = [];
 
-                if ($coinsUsed > 0) {
-                    $transactionService->checkCoinsAvailability($customer, $user->id, $purchaseAmount, $coinsUsed);
-                    $transactionService->exchangeCoin($user, $customer, $coinsUsed, $purchase);
-                    $purchaseLoad += ['coinExchange' => fn ($query) => $query->amount()];
-                }
+            if ($coinsUsed > 0) {
+                $transactionService->checkCoinsAvailability($customer, $user->id, $purchaseAmount, $coinsUsed);
+                $transactionService->exchangeCoin($user, $customer, $coinsUsed, $purchase);
+                $purchaseLoad += ['coinExchange' => fn ($query) => $query->amount()];
+            }
 
-                if ($isRequestingForToken) {
-                    $token = $this->storyService->generateToken($user, $purchase);
-                    $this->storyService->redeemToken($token->code, $customer);
-                    $purchaseLoad += ['token' => fn ($query) => $query->with('story', 'cashback')];
-                }
+            if ($isRequestingForToken) {
+                $token = $this->storyService->generateToken($user, $purchase);
+                $this->storyService->redeemToken($token->code, $customer);
+                $purchaseLoad += ['token' => fn ($query) => $query->with('story', 'cashback')];
+            }
 
-                $purchase->load($purchaseLoad);
+            $purchase->load($purchaseLoad);
 
-                return $purchase;
-            });
+            return $purchase;
+        });
 
-            broadcast(new QRScanPurchaseEvent($user->id, $customer->id, purchase: $purchase))->toOthers();
+        broadcast(new QRScanPurchaseEvent($user->id, $customer->id, purchase: $purchase))->toOthers();
 
-            return response()->json($purchase);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
+        return response()->json($purchase);
     }
 
     public function redeemToken()
@@ -126,12 +104,8 @@ class InstagramController extends Controller
             'token' => 'required|string',
         ]);
         $token = $validated['token'];
-        try {
-            $tokenResponse = $this->storyService->redeemToken($token, auth()->user());
-            return response()->json($tokenResponse);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
+        $tokenResponse = $this->storyService->redeemToken($token, auth()->user());
+        return response()->json($tokenResponse);
     }
 
     public function myMentionedStories()
@@ -149,12 +123,8 @@ class InstagramController extends Controller
             return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
-        try {
-            $stories = $this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id);
-            return response()->json(['data' => $stories]);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
+        $stories = $this->storyService->getMentioningStories($story->instagram_id, $story->token->instagram_id);
+        return response()->json(['data' => $stories]);
     }
 
     public function submitStory()
@@ -185,13 +155,9 @@ class InstagramController extends Controller
 
     public function approveStory(ApproveCustomerStoryRequest $request)
     {
-        try {
-            $validated = $request->validated();
+        $validated = $request->validated();
 
-            return $this->storyService->approveStory(auth()->user()->id, $validated);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
+        return $this->storyService->approveStory(auth()->user()->id, $validated);
     }
 
     public function storyToken()

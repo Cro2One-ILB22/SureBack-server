@@ -18,8 +18,6 @@ use App\Services\OTPService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AuthController extends Controller
 {
@@ -37,36 +35,26 @@ class AuthController extends Controller
     {
         $validated = $request->safe();
         $instagramService = new InstagramService();
-        try {
-            $instagramId = $instagramService->getUniqueInstagramId($validated->username);
-            $reqData = ['instagram_id' => $instagramId];
+        $instagramId = $instagramService->getUniqueInstagramId($validated->username);
+        $reqData = ['instagram_id' => $instagramId];
 
-            $otpService = new OTPService();
+        $otpService = new OTPService();
 
-            $account = CorporateInstagram::where('is_active', true)->orderBy('last_used_at', 'asc')->first();
-            $otpResponse = $otpService->generateInstagramOTP($reqData);
-            $otpResponse['instagram_to_dm'] = $account->username;
+        $account = CorporateInstagram::where('is_active', true)->orderBy('last_used_at', 'asc')->first();
+        $otpResponse = $otpService->generateInstagramOTP($reqData);
+        $otpResponse['instagram_to_dm'] = $account->username;
 
-            return response()->json($otpResponse);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
-        }
+        return response()->json($otpResponse);
     }
 
     public function register(StoreUserRequest $request)
     {
         $validated = $request->validated();
-        try {
-            $username = $validated['username'];
-            $instagramToDM = $validated['instagram_to_dm'];
-            $instagramService = new InstagramService();
-            $instagramId = $instagramService->getUniqueInstagramId($username);
-            $instagramService->verifyOTP($instagramId, $instagramToDM);
-        } catch (BadRequestException $e) {
-            return response()->json(['message' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
-        }
+        $username = $validated['username'];
+        $instagramToDM = $validated['instagram_to_dm'];
+        $instagramService = new InstagramService();
+        $instagramId = $instagramService->getUniqueInstagramId($username);
+        $instagramService->verifyOTP($instagramId, $instagramToDM);
         return $this->registerUser($request, $instagramId);
     }
 

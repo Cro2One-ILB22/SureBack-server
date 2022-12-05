@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class UserController extends Controller
 {
@@ -46,13 +45,7 @@ class UserController extends Controller
         $orderBy = $validator['order_by'] ?? null;
         $user = auth()->user();
 
-        try {
-            $merchants = $this->userService->getMerchants($user, $params, $isFavorite, $isVisited, $location, $radius, $orderBy);
-        } catch (BadRequestException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
-        }
+        $merchants = $this->userService->getMerchants($user, $params, $isFavorite, $isVisited, $location, $radius, $orderBy);
 
         return response()->json($merchants);
     }
@@ -68,14 +61,8 @@ class UserController extends Controller
         $location = $latitude && $longitude ? [$latitude, $longitude] : [];
         $user = auth()->user();
 
-        try {
-            $merchant = $this->userService->getMerchant($user, $id, $location);
-            return response()->json($merchant);
-        } catch (BadRequestException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
-        }
+        $merchant = $this->userService->getMerchant($user, $id, $location);
+        return response()->json($merchant);
     }
 
     /**
@@ -93,19 +80,13 @@ class UserController extends Controller
         $params = request()->except(array_keys($rules));
         $hasFavoritedMe = $validator['has_favorited_me'] ?? null;
         $hasVisited = $validator['has_visited'] ?? null;
-        try {
-            $customers = $this->userService->getCustomers(auth()->user(), $params, $hasFavoritedMe, $hasVisited)
-                ->paginate()
-                ->through(function ($customer) {
-                    $customer->individual_coins = $customer->customerCoins;
-                    unset($customer->customerCoins);
-                    return $customer;
-                });
-        } catch (BadRequestException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
-        }
+        $customers = $this->userService->getCustomers(auth()->user(), $params, $hasFavoritedMe, $hasVisited)
+            ->paginate()
+            ->through(function ($customer) {
+                $customer->individual_coins = $customer->customerCoins;
+                unset($customer->customerCoins);
+                return $customer;
+            });
 
         return response()->json($customers);
     }
@@ -144,14 +125,8 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request)
     {
         $user = auth()->user();
-        try {
-            $user->update($request->safe()->except('username'));
-            return response()->json($user);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
-        }
+        $user->update($request->safe()->except('username'));
+        return response()->json($user);
     }
 
     public function updateMerchantDetail(UpdateMerchantDetailRequest $request)

@@ -18,7 +18,8 @@ use App\Models\TokenCashback;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class StoryService
 {
@@ -33,15 +34,15 @@ class StoryService
         $cashbackPercent = $user->merchantDetail->cashback_percent;
 
         if ($dailyTokenLimit && $todaysTokenCount >= $dailyTokenLimit) {
-            throw new BadRequestException('Daily token limit reached');
+            throw new BadRequestHttpException('Daily token limit reached');
         }
 
         if (!$user->merchantDetail->is_active_generating_token) {
-            throw new BadRequestException('You don\'t activate token generation');
+            throw new BadRequestHttpException('You don\'t activate token generation');
         }
 
         if (!$cashbackPercent || $cashbackPercent <= 0) {
-            throw new BadRequestException('You haven\'t set cashback percent');
+            throw new BadRequestHttpException('You haven\'t set cashback percent');
         }
 
         return DB::transaction(function () use ($user, $purchase, $cashbackPercent) {
@@ -89,22 +90,22 @@ class StoryService
     public function redeemToken(string $token, User $customer)
     {
         if ($customer->isMerchant()) {
-            throw new BadRequestException('Merchant can\'t redeem token');
+            throw new BadRequestHttpException('Merchant can\'t redeem token');
         }
         $encryptedToken = CryptoService::encrypt($token);
         $storyToken = StoryToken::where('code', $encryptedToken)->first();
         if (!$storyToken) {
-            throw new BadRequestException('Invalid token');
+            throw new BadRequestHttpException('Invalid token');
         }
         if ($storyToken->expires_at < now()) {
-            throw new BadRequestException('Token expired');
+            throw new BadRequestHttpException('Token expired');
         }
         if ($storyToken->story) {
-            throw new BadRequestException('Token already redeemed');
+            throw new BadRequestHttpException('Token already redeemed');
         }
         // $customerInstagram = (new InstagramService())->getProfile($customer->instagram_username);
         // if ($customerInstagram['follower_count'] < 100) {
-        //     throw new BadRequestException('Customer doesn\'t have enough followers');
+        //     throw new BadRequestHttpException('Customer doesn\'t have enough followers');
         // }
 
         $transactionService = new TransactionService();
@@ -272,7 +273,7 @@ class StoryService
             });
         })->first();
         if (!$story) {
-            throw new BadRequestException('Story not found');
+            throw new NotFoundHttpException('Story not found');
         }
 
         $story->approval_status = StoryApprovalStatusEnum::from($storyRequest['approved']);

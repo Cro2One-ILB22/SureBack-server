@@ -6,7 +6,8 @@ use App\Enums\RoleEnum;
 use App\Models\MerchantDetail;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class UserService
 {
@@ -63,7 +64,7 @@ class UserService
                     $latitude = $location[0];
                     $longitude = $location[1];
                     if (!is_numeric($latitude) || !is_numeric($longitude)) {
-                        throw new BadRequestException('Invalid latitude or longitude');
+                        throw new BadRequestHttpException('Invalid latitude or longitude');
                     }
 
                     $query->with(['addresses.location' => function ($query) use ($latitude, $longitude) {
@@ -81,7 +82,7 @@ class UserService
                 $value = $value !== null ? strtolower($value) : '';
                 $merchants = $merchants->whereRaw("LOWER($key) LIKE ?", ['%' . $value . '%']);
             } else {
-                throw new BadRequestException("Invalid parameter: $key");
+                throw new BadRequestHttpException("Invalid parameter: $key");
             }
         }
 
@@ -90,12 +91,12 @@ class UserService
             foreach ($orderBy as $order) {
                 $order = explode(':', $order);
                 if (count($order) !== 2) {
-                    throw new BadRequestException('Invalid order by');
+                    throw new BadRequestHttpException('Invalid order by');
                 }
                 $column = $order[0];
                 $direction = $order[1];
                 if (!in_array($direction, ['asc', 'desc'])) {
-                    throw new BadRequestException('Invalid order by');
+                    throw new BadRequestHttpException('Invalid order by');
                 }
                 if (!Schema::hasColumn('users', $column)) {
                     if ($column === 'is_favorite') {
@@ -106,7 +107,7 @@ class UserService
                             }]);
                         $column = 'merchant_coins_count';
                     } else {
-                        throw new BadRequestException('Invalid order by');
+                        throw new BadRequestHttpException('Invalid order by');
                     }
                 }
                 $merchants = $merchants->orderBy($column, $direction);
@@ -166,7 +167,7 @@ class UserService
                     $latitude = $location[0];
                     $longitude = $location[1];
                     if (!is_numeric($latitude) || !is_numeric($longitude)) {
-                        throw new BadRequestException('Invalid latitude or longitude');
+                        throw new BadRequestHttpException('Invalid latitude or longitude');
                     }
 
                     $query->with(['addresses.location' => function ($query) use ($latitude, $longitude) {
@@ -183,7 +184,7 @@ class UserService
             ->first();
 
         if (!$merchant) {
-            throw new BadRequestException('Merchant not found');
+            throw new NotFoundHttpException('Merchant not found');
         }
 
         $merchant->merchantDetail->makeHidden('user');
@@ -233,7 +234,7 @@ class UserService
                 $value = $value !== null ? strtolower($value) : '';
                 $customers = $customers->whereRaw("LOWER($key) LIKE ?", ['%' . $value . '%']);
             } else {
-                throw new BadRequestException("Invalid parameter: $key");
+                throw new BadRequestHttpException("Invalid parameter: $key");
             }
         }
 
