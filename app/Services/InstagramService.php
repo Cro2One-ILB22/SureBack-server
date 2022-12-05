@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Throwable;
 
 class InstagramService
@@ -67,7 +68,7 @@ class InstagramService
                 $account = CorporateInstagram::where('is_active', true)->orderBy('last_used_at', 'asc')->first();
             }
             if (!$account) {
-                throw new BadRequestException('No active instagram account found');
+                throw new ServiceUnavailableHttpException('Under maintenance');
             }
             if (!$account->is_active) {
                 throw new BadRequestException('Try registering again');
@@ -145,10 +146,10 @@ class InstagramService
                     $account->save();
                     return InstagramService::callAPI($method, $path, $queries, $headers, $body, $auth, $username);
                 }
-                throw new BadRequestException('Under maintenance');
+                throw new ServiceUnavailableHttpException(message: 'Under maintenance');
             }
             if ($response->status() === 400) {
-                throw new BadRequestException('Under maintenance');
+                throw new ServiceUnavailableHttpException(message: 'Under maintenance');
             }
         }
 
