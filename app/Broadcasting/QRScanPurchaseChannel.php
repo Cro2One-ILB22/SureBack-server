@@ -25,7 +25,11 @@ class QRScanPurchaseChannel
      */
     public function join(User $user, $merchantId, $customerId)
     {
-        if ((int) $user->id === (int) $merchantId && $user->isMerchant()) {
+        $userRoles = $user->roles->pluck('slug');
+        $isMerchant = $userRoles->contains(RoleEnum::MERCHANT);
+        $isCustomer = $userRoles->contains(RoleEnum::CUSTOMER);
+
+        if ((int) $user->id === (int) $merchantId && $isMerchant) {
             $customer = User::where('id', $customerId)->whereHas('roles', function ($query) {
                 $query->where('slug', RoleEnum::CUSTOMER);
             })->first();
@@ -33,7 +37,7 @@ class QRScanPurchaseChannel
                 return true;
             }
         }
-        if ((int) $user->id === (int) $customerId && $user->isCustomer()) {
+        if ((int) $user->id === (int) $customerId && $isCustomer) {
             $merchant = User::where('id', $merchantId)->whereHas('roles', function ($query) {
                 $query->where('slug', RoleEnum::MERCHANT);
             })->first();

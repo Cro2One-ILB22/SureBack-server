@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleEnum;
 use App\Enums\StoryApprovalStatusEnum;
 use App\Events\QRScanPurchaseEvent;
 use App\Http\Requests\ApproveCustomerStoryRequest;
@@ -92,17 +93,21 @@ class InstagramController extends Controller
                 $paymentAmount = $purchaseAmount - $coinsUsed;
                 $transactionService = new TransactionService();
                 $purchase = $transactionService->createPurchase($user, $purchaseAmount, $paymentAmount);
+                $purchaseLoad = [];
 
                 if ($coinsUsed > 0) {
                     $transactionService->checkCoinsAvailability($customer, $user->id, $purchaseAmount, $coinsUsed);
                     $transactionService->exchangeCoin($user, $customer, $coinsUsed, $purchase);
+                    $purchaseLoad += ['coinExchange' => fn ($query) => $query->amount()];
                 }
 
                 if ($isRequestingForToken) {
                     $token = $this->storyService->generateToken($user, $purchase);
                     $this->storyService->redeemToken($token->code, $customer);
-                    $purchase->load(['token' => fn ($query) => $query->with('story', 'cashback'), 'coinExchange']);
+                    $purchaseLoad += ['token' => fn ($query) => $query->with('story', 'cashback')];
                 }
+
+                $purchase->load($purchaseLoad);
 
                 return $purchase;
             });
@@ -175,7 +180,7 @@ class InstagramController extends Controller
             return response()->json(['message' => 'Story not found'], Response::HTTP_NOT_FOUND);
         }
 
-        return response()->json($story->load('token'));
+        return response()->json($story);
     }
 
     public function approveStory(ApproveCustomerStoryRequest $request)
@@ -200,7 +205,10 @@ class InstagramController extends Controller
             'order' => 'string',
         ]);
 
-        if ($user->isMerchant()) {
+        $userRoles = $user->roles->pluck('slug');
+        $isMerchant = $userRoles->contains(RoleEnum::MERCHANT);
+
+        if ($isMerchant) {
             $tokens = StoryToken::whereHas('purchase', function ($purchase) use ($user) {
                 $purchase->where('merchant_id', $user->id);
             });
@@ -260,19 +268,22 @@ class InstagramController extends Controller
                     return response()->json(['message' => 'Invalid order by'], Response::HTTP_BAD_REQUEST);
                 }
 
-                if (Schema::hasColumn('story_tokens', $column)) {
-                    $tokens = $tokens->orderBy($column, $direction);
-                } else {
-                    return response()->json(['message' => 'Invalid order by'], Response::HTTP_BAD_REQUEST);
+                if (!Schema::hasColumn('story_tokens', $column)) {
+                    if ($column == 'last_status_update_at') {
+                    } else {
+                        return response()->json(['message' => 'Invalid order by'], Response::HTTP_BAD_REQUEST);
+                    }
                 }
+                $tokens = $tokens->orderBy($column, $direction);
             }
         } else {
             $tokens = $tokens->orderBy('id', 'desc');
         }
 
-        $userContradictiveRole = $user->isCustomer() ? 'merchant' : 'customer';
+        $userContradictiveRole = $isMerchant ? 'customer' : 'merchant';
         $tokens = $tokens
             ->with('story', 'cashback', "purchase.{$userContradictiveRole}")
+            ->lastStatusUpdateAt()
             ->paginate();
         return response()->json($tokens);
     }
@@ -280,6 +291,10 @@ class InstagramController extends Controller
     function story()
     {
         $user = auth()->user();
+        $userRoles = $user->roles->pluck('slug');
+        $isMerchant = $userRoles->contains(RoleEnum::MERCHANT);
+        $isCustomer = $userRoles->contains(RoleEnum::CUSTOMER);
+
         $request = request()->validate([
             'customer_id' => 'integer',
             'merchant_id' => 'integer',
@@ -291,7 +306,7 @@ class InstagramController extends Controller
             'assessed' => 'boolean',
         ]);
 
-        if ($user->isMerchant()) {
+        if ($isMerchant) {
             $stories = CustomerStory::whereHas('token', function ($token) use ($user) {
                 $token->whereHas('purchase', function ($purchase) use ($user) {
                     $purchase->where('merchant_id', $user->id);
@@ -303,14 +318,14 @@ class InstagramController extends Controller
         }
 
         if (array_key_exists('customer_id', $request)) {
-            if ($user->isCustomer()) {
+            if ($isCustomer) {
                 return response()->json(['message' => 'You are not allowed to see other customer\'s story'], Response::HTTP_UNAUTHORIZED);
             }
             $stories = $stories->where('customer_id', $request['customer_id']);
         }
 
         if (array_key_exists('merchant_id', $request)) {
-            if ($user->isMerchant()) {
+            if ($isMerchant) {
                 return response()->json(['message' => 'You are not allowed to see other merchants customers\' story'], Response::HTTP_UNAUTHORIZED);
             }
             $stories = $stories->whereHas('token', function ($token) use ($request) {
@@ -321,7 +336,7 @@ class InstagramController extends Controller
         }
 
         if (array_key_exists('customer_name', $request)) {
-            if ($user->isCustomer()) {
+            if ($isCustomer) {
                 return response()->json(['message' => 'You are not allowed to see other customer\'s story'], Response::HTTP_UNAUTHORIZED);
             }
             $customerName = $request['customer_name'];
@@ -331,7 +346,7 @@ class InstagramController extends Controller
         }
 
         if (array_key_exists('merchant_name', $request)) {
-            if ($user->isMerchant()) {
+            if ($isMerchant) {
                 return response()->json(['message' => 'You are not allowed to see other merchants customers\' story'], Response::HTTP_UNAUTHORIZED);
             }
             $merchantName = $request['merchant_name'];
@@ -388,14 +403,18 @@ class InstagramController extends Controller
             }
         }
 
-        $userContradictiveRole = $user->isCustomer() ? 'merchant' : 'customer';
+        $userContradictiveRole = $isCustomer ? 'merchant' : 'customer';
         $userContradictiveRole = $userContradictiveRole == 'merchant' ? 'token.purchase.merchant' : 'customer';
         $stories = $stories
-            ->with(['token.cashback', 'token.purchase', $userContradictiveRole])
+            ->with([$userContradictiveRole])
+            ->with(['token' => function ($token) {
+                $token->with(['cashback', 'story', 'purchase'])
+                    ->lastStatusUpdateAt();
+            }])
             ->orderBy('id', 'desc')
             ->paginate()
             ->through(function ($story) {
-                $story->token->story = null;
+                $story->token->makeHidden('story');
                 return $story;
             });
         return response()->json($stories);

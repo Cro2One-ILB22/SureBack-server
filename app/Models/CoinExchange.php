@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\CoinTypeEnum;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,15 +27,13 @@ class CoinExchange extends Model
         'coin_type' => CoinTypeEnum::class,
     ];
 
-    protected $appends = [
-        'amount',
-    ];
-
-    protected function amount(): Attribute
+    function scopeAmount($query)
     {
-        return new Attribute(
-            fn () => $this->customerTransaction->amount ?? $this->merchantTransaction->amount
-        );
+        return $query->addSelect([
+            'amount' => Transaction::select('amount')
+                ->whereColumn('id', 'coin_exchanges.customer_transaction_id')
+                ->limit(1)
+        ]);
     }
 
     public function purchase()

@@ -123,9 +123,10 @@ class AuthController extends Controller
             if (!auth()->attempt($credentials)) {
                 return response()->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
             }
-            (new NotificationService())->registerForNotification(auth()->user());
+            $user = auth()->user();
+            (new NotificationService())->registerForNotification($user);
 
-            return $this->respondWithToken(auth()->user());
+            return $this->respondWithToken($user);
         });
     }
 
@@ -136,17 +137,28 @@ class AuthController extends Controller
      */
     public function me()
     {
-        $user = auth()->user();
-        if ($user->roles->contains('slug', RoleEnum::MERCHANT)) {
-            $user->merchantDetail->makeHidden(['user', 'user_id', 'created_at', 'updated_at']);
-            $user->load('merchantDetail.addresses.location');
-        }
+        $user = User::where('id', auth()->user()->id)
+            ->with(['coins', 'roles'])
+            ->withCoinsDebit('this_month')
+            ->withCoinsDebit('this_week')
+            ->withCoinsDebit('today')
+            ->withCoinsCredit('this_month')
+            ->withCoinsCredit('this_week')
+            ->withCoinsCredit('today');
+        $user = $user->first();
         $roles = $user->roles->pluck('slug');
         unset($user->roles);
         $user->roles = $roles;
-        $user->outstanding_coins = $user->outstanding_coins;
-        $user->exchanged_coins = $user->exchanged_coins;
-        return response()->json($user->load('coins'));
+        if ($user->roles->contains(RoleEnum::MERCHANT)) {
+            $user->load([
+                'merchantDetail' => fn ($query) => $query->with('addresses.location')
+                ->todaysTokenCount()
+            ]);
+        }
+        $user->makeHidden(['coins_debit_this_month', 'coins_debit_this_week', 'coins_debit_today', 'coins_credit_this_month', 'coins_credit_this_week', 'coins_credit_today']);
+        $user->setAppends(['outstanding_coins', 'exchanged_coins']);
+        $user->makeHidden('transactions');
+        return response()->json($user);
     }
 
     /**

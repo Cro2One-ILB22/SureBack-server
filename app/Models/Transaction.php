@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\AccountingEntryEnum;
+use App\Enums\RoleEnum;
 use App\Enums\TransactionCategoryEnum;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -46,30 +46,35 @@ class Transaction extends Model
         'purchase',
     ];
 
-    protected function purchase(): Attribute
+    protected function getPurchaseAttribute()
     {
-        return new Attribute(
-            function () {
-                if ($this->category->slug === TransactionCategoryEnum::COIN_EXCHANGE) {
-                    if ($this->user->isCustomer()) {
-                        $purchase = $this->customerCoinExchange->purchase;
-                    } else if ($this->user->isMerchant()) {
-                        $purchase = $this->merchantCoinExchange->purchase;
-                    }
-                }
-                if ($this->category->slug === TransactionCategoryEnum::CASHBACK) {
-                    $purchase = $this->cashback->story->token->purchase;
-                }
-                if ($this->category->slug === TransactionCategoryEnum::STORY) {
-                    $purchase = $this->tokens->first()->purchase;
-                }
+        $user = $this->user;
+        if (!$user) {
+            return null;
+        }
 
-                if (isset($purchase)) {
-                    $user = $this->user->isCustomer() ? 'merchant' : 'customer';
-                    return $purchase->load([$user, 'token.cashback']);
-                }
+        $userRoles = $user->roles->pluck('slug');
+        $isMerchant = $userRoles->contains(RoleEnum::MERCHANT);
+        $isCustomer = $userRoles->contains(RoleEnum::CUSTOMER);
+
+        if ($this->category->slug === TransactionCategoryEnum::COIN_EXCHANGE) {
+            if ($isCustomer) {
+                $purchase = $this->customerCoinExchange->purchase;
+            } else if ($isMerchant) {
+                $purchase = $this->merchantCoinExchange->purchase;
             }
-        );
+        }
+        if ($this->category->slug === TransactionCategoryEnum::CASHBACK) {
+            $purchase = $this->cashback->story->token->purchase;
+        }
+        if ($this->category->slug === TransactionCategoryEnum::STORY) {
+            $purchase = $this->tokens->first()->purchase;
+        }
+
+        if (isset($purchase)) {
+            $user = $isCustomer ? 'merchant' : 'customer';
+            return $purchase->load([$user, 'token.cashback']);
+        }
     }
 
     public function user()

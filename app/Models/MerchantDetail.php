@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\CashbackCalculationMethodEnum;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,7 +24,6 @@ class MerchantDetail extends Model
     ];
 
     protected $appends = [
-        'todays_token_count',
         // 'last_token_generated_at',
         'cooldown_until',
     ];
@@ -51,15 +49,23 @@ class MerchantDetail extends Model
         'cooldown_until',
     ];
 
-    public function todaysTokenCount(): Attribute
+    function scopeTodaysTokenCount($query)
     {
-        return new Attribute(
-            fn () => $this->user
-                ->purchasesAsMerchant()
-                ->whereHas('token')
-                ->where('created_at', '>=', now('Asia/Jakarta')->startOfDay())
-                ->count()
-        );
+        return $query->addSelect([
+            'todays_token_count' => function ($query) {
+                $query->selectRaw('COUNT(*)')
+                    ->from('story_tokens')
+                    ->whereBetween('story_tokens.created_at', [
+                        now('GMT+7')->startOfDay()->subHours(7),
+                        now('GMT+7')->endOfDay()->subHours(7),
+                    ])
+                    ->whereIn('story_tokens.purchase_id', function ($query) {
+                        $query->select('purchases.id')
+                            ->from('purchases')
+                            ->whereColumn('purchases.merchant_id', 'merchant_details.user_id');
+                    });
+            },
+        ]);
     }
 
     // public function getLastTokenGeneratedAtAttribute()

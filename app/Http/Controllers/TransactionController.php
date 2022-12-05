@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AccountingEntryEnum;
 use App\Enums\PaymentInstrumentEnum;
+use App\Enums\RoleEnum;
 use App\Enums\TransactionCategoryEnum;
 use App\Enums\TransactionStatusEnum;
 use App\Models\Transaction;
@@ -13,6 +14,11 @@ class TransactionController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        $userRoles = $user->roles->pluck('slug');
+        $isMerchant = $userRoles->contains(RoleEnum::MERCHANT);
+        $isCustomer = $userRoles->contains(RoleEnum::CUSTOMER);
+
         $request = request()->validate([
             'merchant_id' => 'integer',
             'accounting_entry' => [new Enum(AccountingEntryEnum::class)],
@@ -21,14 +27,14 @@ class TransactionController extends Controller
         ]);
         $user = auth()->user();
 
-        if ($user->isMerchant() && array_key_exists('merchant_id', $request)) {
+        if ($isMerchant && array_key_exists('merchant_id', $request)) {
             return response()->json([
                 'message' => 'You are not allowed to view other merchants\' transactions',
             ], 403);
         }
 
         $transactions = Transaction::where('user_id', $user->id);
-        if ($user->isCustomer() && array_key_exists('merchant_id', $request)) {
+        if ($isCustomer && array_key_exists('merchant_id', $request)) {
             $merchantId = $request['merchant_id'];
             $transactions = $transactions
                 ->where(
@@ -86,12 +92,14 @@ class TransactionController extends Controller
         }
 
         $transactions = $transactions->with('status', 'category', 'paymentInstrument')
+            ->with('user', 'tokens', 'customerCoinExchange', 'merchantCoinExchange', 'cashback')
             ->whereHas('paymentInstrument', function ($query) {
                 $query->where('slug', '!=', PaymentInstrumentEnum::OTHER);
             })
             ->orderBy('id', 'desc')
             ->paginate()
             ->through(function ($transaction) {
+                $transaction->makeHidden('user', 'tokens', 'customerCoinExchange', 'merchantCoinExchange', 'cashback');
                 return [
                     ...$transaction->toArray(),
                     'status' => $transaction->status->slug,

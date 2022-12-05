@@ -43,13 +43,15 @@ class Notification extends Model
         'is_read' => 'boolean',
     ];
 
-    protected $appends = [
-        'category',
-    ];
-
-    public function getCategoryAttribute(): string
+    function scopeCategory($query)
     {
-        return $this->subscription->slug;
+        return $query->addSelect([
+            'category' => function ($query) {
+                $query->select('slug')
+                    ->from('notification_subscriptions')
+                    ->whereColumn('notification_subscriptions.id', 'notifications.notification_subscription_id');
+            },
+        ]);
     }
 
     public function subscription()

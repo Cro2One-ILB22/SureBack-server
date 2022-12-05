@@ -203,15 +203,10 @@ class StoryService
             return false;
         }
 
-        $story = CustomerStory::where('id', $customerStory->id)->first();
-        if (!$story) {
-            return false;
-        }
-
         $imageUri = $mentionedStory['image_versions2']['candidates'][0]['url'];
         $videoUri = $mentionedStory['media_type'] === 2 ? $mentionedStory['video_versions'][0]['url'] : null;
         $time = time();
-        $imageName = "{$story->id}_{$time}";
+        $imageName = "{$customerStory->id}_{$time}";
         $videoName = $videoUri ? $imageName : null;
 
         SaveFile::dispatch([
@@ -227,7 +222,7 @@ class StoryService
             ]);
         }
 
-        $story->update([
+        $customerStory->update([
             'instagram_story_id' => $instagramStoryId,
             'image_uri' => $imageName,
             'video_uri' => $videoName,
@@ -239,13 +234,13 @@ class StoryService
             'expiring_at' => $mentionedStory['expiring_at'],
         ]);
 
-        ValidateStory::dispatch(['instagram_story_id' => $story->instagram_story_id])
-            ->delay(now()->addSeconds($story->expiring_at - $this->storyInspectedTimeBeforeExpiry));
-        ApproveStory::dispatch(['id' => $story->id])->delay(now()->addDay());
+        ValidateStory::dispatch(['instagram_story_id' => $customerStory->instagram_story_id])
+            ->delay(now()->addSeconds($customerStory->expiring_at - $this->storyInspectedTimeBeforeExpiry));
+        ApproveStory::dispatch(['id' => $customerStory->id])->delay(now()->addDay());
 
-        $story->image_uri = $imageUri;
-        $story->video_uri = $videoUri;
-        return $story;
+        $customerStory->image_uri = $imageUri;
+        $customerStory->video_uri = $videoUri;
+        return $customerStory;
     }
 
     function getLast24HoursSubmittedStories(int $userId)

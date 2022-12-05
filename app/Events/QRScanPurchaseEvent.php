@@ -9,6 +9,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class QRScanPurchaseEvent implements ShouldBroadcast
 {
@@ -27,6 +28,14 @@ class QRScanPurchaseEvent implements ShouldBroadcast
      */
     public function __construct($merchantId, $customerId, $purchaseRequest = null, $purchase = null, $totalPurchase = null)
     {
+        if ($purchase) {
+            try {
+                $purchase = $purchase->toArray();
+            } catch (\Exception $e) {
+                Log::error($e->getMessage());
+            }
+        }
+
         $this->merchantId = $merchantId;
         $this->customerId = $customerId;
         $this->purchase_request = $purchaseRequest;

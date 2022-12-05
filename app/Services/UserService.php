@@ -54,9 +54,10 @@ class UserService
         }
 
         $merchants = $merchants
-            ->with(['merchantDetail' => function ($query) use ($userId, $location) {
-                $query->withLastTokenGeneratedForMeAt($userId);
-                $query->with('addresses.location');
+            ->with(['merchantDetail.user.purchasesAsMerchant', 'merchantDetail' => function ($query) use ($userId, $location) {
+                $query->withLastTokenGeneratedForMeAt($userId)
+                    ->todaysTokenCount()
+                    ->with('addresses.location');
 
                 if (count($location) === 2) {
                     $latitude = $location[0];
@@ -142,6 +143,7 @@ class UserService
             }])
             ->paginate()
             ->through(function ($merchant) {
+                $merchant->merchantDetail->makeHidden('user');
                 $merchant->individual_coins = $merchant->merchantCoins;
                 unset($merchant->merchantCoins);
 
@@ -155,9 +157,10 @@ class UserService
             $query->where('slug', RoleEnum::MERCHANT);
         })
             ->where('id', $merchantId)
-            ->with(['merchantDetail' => function ($query) use ($user, $location) {
-                $query->withLastTokenGeneratedForMeAt($user->id);
-                $query->with('addresses.location');
+            ->with(['merchantDetail.user.purchasesAsMerchant', 'merchantDetail' => function ($query) use ($user, $location) {
+                $query->withLastTokenGeneratedForMeAt($user->id)
+                    ->todaysTokenCount()
+                    ->with('addresses.location');
 
                 if (count($location) === 2) {
                     $latitude = $location[0];
@@ -183,6 +186,7 @@ class UserService
             throw new BadRequestException('Merchant not found');
         }
 
+        $merchant->merchantDetail->makeHidden('user');
         $merchant->individual_coins = $merchant->merchantCoins;
         unset($merchant->merchantCoins);
 

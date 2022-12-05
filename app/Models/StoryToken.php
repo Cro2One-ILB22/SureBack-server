@@ -29,7 +29,10 @@ class StoryToken extends Model
      *
      * @var array
      */
-    protected $dates = ['expires_at'];
+    protected $dates = [
+        'expires_at',
+        'last_status_update_at',
+    ];
 
     protected $casts = [
         'instagram_id' => 'integer',
@@ -45,7 +48,6 @@ class StoryToken extends Model
         'approved_at',
         'rejected_at',
         'rejected_reason',
-        'last_status_update_at',
         'status_history',
     ];
 
@@ -177,14 +179,35 @@ class StoryToken extends Model
         );
     }
 
-    protected function lastStatusUpdateAt(): Attribute
+    function scopeLastStatusUpdateAt($query)
     {
-        return new Attribute(
-            function () {
-                $status = $this->currentStatus;
-                return $this->{$status . 'At'};
-            },
-        );
+        return $query->addSelect([
+            'last_status_update_at' => CustomerStory::select('created_at')
+                ->whereColumn('customer_stories.story_token_id', 'story_tokens.id')
+                ->unionAll(
+                    CustomerStory::select('submitted_at')
+                        ->whereColumn('customer_stories.story_token_id', 'story_tokens.id')
+                        ->whereNotNull('submitted_at')
+                )
+                ->unionAll(
+                    CustomerStory::select('assessed_at')
+                        ->whereColumn('customer_stories.story_token_id', 'story_tokens.id')
+                        ->whereNotNull('assessed_at')
+                )
+                ->unionAll(
+                    CustomerStory::select('inspected_at')
+                        ->whereColumn('customer_stories.story_token_id', 'story_tokens.id')
+                        ->whereNotNull('inspected_at')
+                )
+                ->unionAll(
+                    CustomerStory::select('story_tokens.expires_at')
+                        ->whereColumn('customer_stories.story_token_id', 'story_tokens.id')
+                        ->whereNull('submitted_at')
+                        ->where('story_tokens.expires_at', '<', now())
+                )
+                ->orderBy('created_at', 'desc')
+                ->limit(1)
+        ]);
     }
 
     protected function statusHistory(): Attribute
