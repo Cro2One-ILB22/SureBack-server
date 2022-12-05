@@ -18,18 +18,20 @@ class QRScanPurchaseEvent implements ShouldBroadcast
     private $customerId;
     public $purchase_request;
     public $purchase;
+    public $total_purchase;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($merchantId, $customerId, $purchaseRequest = null, $purchase = null)
+    public function __construct($merchantId, $customerId, $purchaseRequest = null, $purchase = null, $totalPurchase = null)
     {
         $this->merchantId = $merchantId;
         $this->customerId = $customerId;
         $this->purchase_request = $purchaseRequest;
         $this->purchase = $purchase;
+        $this->total_purchase = $totalPurchase;
     }
 
     /**

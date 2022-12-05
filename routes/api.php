@@ -85,6 +85,7 @@ Route::group([
 ], function ($router) {
     Route::post('qr/response', [BroadcastingController::class, 'qrScanResponse'])->middleware('abilities:merchant');
     Route::post('qr/purchase', [BroadcastingController::class, 'qrScanPurchase'])->middleware('abilities:customer');
+    Route::post('qr/total-purchase', [BroadcastingController::class, 'qrScanTotalPurchase'])->middleware('abilities:merchant');
 });
 
 Route::group(

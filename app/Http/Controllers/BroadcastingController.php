@@ -6,6 +6,7 @@ use App\Events\QRScanPurchaseEvent;
 use App\Events\QRScanRequestEvent;
 use App\Http\Requests\QRScanPurchaseRequest;
 use App\Http\Requests\QRScanResponseRequest;
+use App\Http\Requests\QRScanTotalPurchase;
 
 class BroadcastingController extends Controller
 {
@@ -40,6 +41,26 @@ class BroadcastingController extends Controller
 
         return response()->json([
             'message' => 'Purchase Request Sent',
+        ]);
+    }
+
+    public function qrScanTotalPurchase(QRScanTotalPurchase $request)
+    {
+        $userId = auth()->user()->id;
+        $validated = $request->validated();
+        $customerId = $validated['customer_id'];
+        $totalPurchase = (int) $validated['total_purchase'];
+
+        broadcast(new QRScanPurchaseEvent(
+            $userId,
+            $customerId,
+            null,
+            null,
+            $totalPurchase
+        ))->toOthers();
+
+        return response()->json([
+            'message' => 'Total Purchase Sent',
         ]);
     }
 }
