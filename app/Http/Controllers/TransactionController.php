@@ -8,6 +8,7 @@ use App\Enums\RoleEnum;
 use App\Enums\TransactionCategoryEnum;
 use App\Enums\TransactionStatusEnum;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;
 
 class TransactionController extends Controller
@@ -22,8 +23,8 @@ class TransactionController extends Controller
         $request = request()->validate([
             'merchant_id' => 'integer',
             'accounting_entry' => [new Enum(AccountingEntryEnum::class)],
-            'status' => [new Enum(TransactionStatusEnum::class)],
-            'category' => [new Enum(TransactionCategoryEnum::class)],
+            'status' => 'string',
+            'category' => 'string',
         ]);
         $user = auth()->user();
 
@@ -78,16 +79,28 @@ class TransactionController extends Controller
         }
 
         if (array_key_exists('status', $request)) {
-            $status = TransactionStatusEnum::from($request['status']);
-            $transactions = $transactions->whereHas('status', function ($query) use ($status) {
-                $query->where('slug', $status);
+            $statuses = explode(',', $request['status']);
+            foreach ($statuses as $status) {
+                Validator::make(['status' => $status], [
+                    'status' => [new Enum(TransactionStatusEnum::class)],
+                ])->validate();
+            }
+
+            $transactions = $transactions->whereHas('status', function ($query) use ($statuses) {
+                $query->whereIn('slug', $statuses);
             });
         }
 
         if (array_key_exists('category', $request)) {
-            $category = TransactionCategoryEnum::from($request['category']);
-            $transactions = $transactions->whereHas('category', function ($query) use ($category) {
-                $query->where('slug', $category);
+            $categories = explode(',', $request['category']);
+            foreach ($categories as $category) {
+                Validator::make(['category' => $category], [
+                    'category' => [new Enum(TransactionCategoryEnum::class)],
+                ])->validate();
+            }
+
+            $transactions = $transactions->whereHas('category', function ($query) use ($categories) {
+                $query->whereIn('slug', $categories);
             });
         }
 
