@@ -79,7 +79,11 @@ class TransactionController extends Controller
         }
 
         if (array_key_exists('status', $request)) {
-            $statuses = explode(',', $request['status']);
+            $statuses = $request['status'];
+            if ($statuses == 'success') {
+                $statuses = 'success,rejected';
+            }
+            $statuses = explode(',', $statuses);
             foreach ($statuses as $status) {
                 Validator::make(['status' => $status], [
                     'status' => [new Enum(TransactionStatusEnum::class)],
