@@ -162,6 +162,12 @@ class InstagramService
                 'account' => $account->username ?? null,
                 'status' => $response->status(),
             ]);
+
+            if ($auth) {
+                info("Deactivating account $account->username");
+                $account->is_active = false;
+                $account->save();
+            }
         }
 
         return $response->json();
@@ -272,7 +278,7 @@ class InstagramService
             // 'reason' => 'cold_start_fetch',
             // 'last_activity_at' => time(),
         ];
-        $responseJson = $this->callAPI('GET', $path, $queries, username: $instagramToDM);
+        $responseJson = $this->callAPI('GET', $path, $queries, username: $instagramToDM) ?? throw new BadRequestHttpException('Try registering again');
 
         return $responseJson['inbox'];
     }
