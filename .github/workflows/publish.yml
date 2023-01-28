@@ -1,0 +1,68 @@
+name: GitHub Packages
+
+on:
+  push:
+    branches: ["main", "staging"]
+  pull_request:
+    branches: ["main", "staging"]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  get-cloud-service:
+    runs-on: ubuntu-latest
+    outputs:
+      cloud-service: ${{ steps.cloud-service.outputs }}
+    steps:
+      - run: echo ${{ secrets.CLOUD_SERVICE }}
+
+  build-and-push-dev:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    if: ${{ github.ref == 'refs/heads/main' }}
+    env:
+      FPM_IMAGE: ghcr.io/cro2one-ilb22/sureback-fpm_server-dev
+      WEBSERVER_IMAGE: ghcr.io/cro2one-ilb22/sureback-web_server-dev
+      CRON_IMAGE: ghcr.io/cro2one-ilb22/sureback-cron-dev
+      FRONTEND_IMAGE: ghcr.io/cro2one-ilb22/sureback-frontend-dev
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push
+        run: |
+          docker-compose build
+          docker-compose push
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    if: ${{ github.ref == 'refs/heads/staging' }}
+    env:
+      FPM_IMAGE: ghcr.io/cro2one-ilb22/sureback-fpm_server
+      WEBSERVER_IMAGE: ghcr.io/cro2one-ilb22/sureback-web_server
+      CRON_IMAGE: ghcr.io/cro2one-ilb22/sureback-cron
+      FRONTEND_IMAGE: ghcr.io/cro2one-ilb22/sureback-frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push
+        run: |
+          docker-compose build
+          docker-compose push

@@ -2,21 +2,28 @@ name: "Google Artifact Registry"
 
 on:
   push:
-    branches: [ "main", "staging" ]
+    branches: ["main", "staging"]
   pull_request:
-    branches: [ "main", "staging" ]
+    branches: ["main", "staging"]
 
 env:
   APP_DIR: ${{ secrets.APP_DIR }}
   GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
 
 jobs:
+  get-cloud-service:
+    runs-on: ubuntu-latest
+    outputs:
+      cloud-service: ${{ steps.cloud-service.outputs }}
+    steps:
+      - run: echo ${{ secrets.CLOUD_SERVICE }}
+
   deploy-dev:
     permissions:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' && needs.get-cloud-service.outputs.cloud-service == 'GKE' }}
     env:
       # SSL_CERT: ${{ secrets.SSL_CERT }}
       # SSL_KEY: ${{ secrets.SSL_KEY }}
@@ -50,7 +57,7 @@ jobs:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/staging' }}
+    if: ${{ github.ref == 'refs/heads/staging' && needs.get-cloud-service.outputs.cloud-service == 'GKE' }}
     env:
       FPM_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-fpm_server-staging
       WEBSERVER_IMAGE: ${{ secrets.GKE_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GKE_CLUSTER }}/sureback-web_server-staging

@@ -10,12 +10,19 @@ on:
       - staging
 
 jobs:
+  get-cloud-service:
+    runs-on: ubuntu-latest
+    outputs:
+      cloud-service: ${{ steps.cloud-service.outputs }}
+    steps:
+      - run: echo ${{ secrets.CLOUD_SERVICE }}
+
   deploy-dev:
     permissions:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && needs.get-cloud-service.outputs.cloud-service == 'GKE' }}
     env:
       DEPLOYMENT_ENV: development
       GKE_CLUSTER: ${{ secrets.GKE_CLUSTER }}
@@ -48,7 +55,7 @@ jobs:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
-    if: ${{ (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging' && needs.get-cloud-service.outputs.cloud-service == 'GKE' }}
     env:
       DEPLOYMENT_ENV: staging
       GKE_CLUSTER: ${{ secrets.GKE_CLUSTER_STAGING }}
