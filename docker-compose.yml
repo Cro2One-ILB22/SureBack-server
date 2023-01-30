@@ -6,7 +6,7 @@ networks:
 
 services:
     # We need to run the FPM container for our application
-    sureback.fpm: &fpm
+    sureback-fpm: &fpm
         platform: linux/amd64
         build:
             context: .
@@ -26,7 +26,7 @@ services:
             - sureback
 
     # Run the web server container for static content, and proxying to our FPM container
-    sureback.web:
+    sureback-webserver:
         platform: linux/amd64
         build:
             context: .
@@ -44,7 +44,7 @@ services:
         environment:
             # We need to pass in the new FPM hst as the name of the fpm container on port 9000
             APP_ENV: "${APP_ENV:-production}"
-            FPM_HOST: "sureback.fpm:9000"
+            FPM_HOST: "sureback-fpm:9000"
             # TEMP_FILE_PATH: "${TEMP_FILE_PATH}"
         # Mount the public directory into the container so we can serve any static files directly when they change
         volumes:
@@ -53,14 +53,14 @@ services:
         networks:
             - sureback
         depends_on:
-            - sureback.fpm
+            - sureback-fpm
 
     # Queue Worker
-    sureback.queue:
+    sureback-queue:
         <<: *fpm
         command: "php artisan queue:work --tries=3"
     # Run the Laravel Scheduler
-    # sureback.cron:
+    # sureback-cron:
     #     build:
     #         context: .
     #         target: cron
@@ -72,7 +72,7 @@ services:
     #     networks:
     #         - sureback
     # # Run the frontend, and file watcher in a container, so any changes are immediately compiled and servable
-    # sureback.frontend:
+    # sureback-frontend:
     #     build:
     #         context: .
     #         target: frontend
