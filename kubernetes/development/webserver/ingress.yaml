@@ -1,7 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: sureback-webserver
+  name: sureback-webserver-dev
+  namespace: sureback-dev-mfahmialkautsar
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -10,12 +11,13 @@ spec:
   # tls:
   #   - secretName: sureback-ssl
   rules:
-  - http:
+  - host: sureback-dev-mfahmialkautsar.cloud.okteto.net
+    http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: sureback-webserver
+            name: sureback-webserver-dev
             port:
               number: 80

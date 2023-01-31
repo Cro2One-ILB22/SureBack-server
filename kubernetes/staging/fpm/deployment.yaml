@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sureback-fpm
+  namespace: sureback-mfahmialkautsar
   labels:
     tier: backend
     layer: fpm
@@ -19,7 +20,7 @@ spec:
     spec:
       containers:
         - name: fpm
-          image: asia-southeast2-docker.pkg.dev/sureback-ilb22/sureback/sureback-fpm_server-staging:latest
+          image: ghcr.io/cro2one-ilb22/sureback-fpm_server:latest
           # imagePullPolicy: Never
           ports:
             - containerPort: 9000
@@ -28,3 +29,5 @@ spec:
                 name: sureback
             - secretRef:
                 name: sureback
+      imagePullSecrets:
+        - name: registry-secret

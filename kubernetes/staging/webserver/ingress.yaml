@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: sureback-webserver
+  namespace: sureback-mfahmialkautsar
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -10,7 +11,8 @@ spec:
   # tls:
   #   - secretName: sureback-ssl
   rules:
-  - http:
+  - host: sureback-mfahmialkautsar.cloud.okteto.net
+    http:
       paths:
       - path: /
         pathType: Prefix

@@ -19,5 +19,6 @@ kind: ConfigMap
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: sureback-env
-  name: sureback
+    io.kompose.service: sureback-env-dev
+  name: sureback-dev
+  namespace: sureback-dev-mfahmialkautsar

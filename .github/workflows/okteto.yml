@@ -1,0 +1,66 @@
+name: Okteto
+
+on:
+  workflow_run:
+    workflows: ["GitHub Packages"]
+    types:
+      - completed
+    branches:
+      - main
+      - staging
+
+env:
+  KUBECONFIG: /tmp/kubeconfig
+
+jobs:
+  devflow:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'staging' }}
+    env:
+      DEPLOYMENT_ENV: staging
+      NAMESPACE: sureback-mfahmialkautsar
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure kubectl
+        env:
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > ${{ env.KUBECONFIG }}
+          chmod +r ${{ env.KUBECONFIG }}
+        shell: bash
+      - name: "Set up Kustomize"
+        run: |-
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
+          chmod u+x ./kustomize
+      - name: Deploy
+        run: |-
+          ./kustomize build kubernetes/$DEPLOYMENT_ENV | kubectl apply -f -
+          kubectl rollout restart -n $NAMESPACE deployment sureback-fpm
+          kubectl rollout restart -n $NAMESPACE deployment sureback-queue-worker-default
+          kubectl rollout restart -n $NAMESPACE deployment sureback-webserver
+
+  devflow-dev:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    env:
+      DEPLOYMENT_ENV: development
+      NAMESPACE: sureback-dev-mfahmialkautsar
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure kubectl
+        env:
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > ${{ env.KUBECONFIG }}
+          chmod +r ${{ env.KUBECONFIG }}
+        shell: bash
+      - name: "Set up Kustomize"
+        run: |-
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
+          chmod u+x ./kustomize
+      - name: Deploy
+        run: |-
+          ./kustomize build kubernetes/$DEPLOYMENT_ENV | kubectl apply -f -
+          kubectl rollout restart -n $NAMESPACE deployment sureback-fpm-dev
+          kubectl rollout restart -n $NAMESPACE deployment sureback-queue-worker-default-dev
+          kubectl rollout restart -n $NAMESPACE deployment sureback-webserver-dev

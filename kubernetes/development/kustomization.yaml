@@ -9,4 +9,4 @@ resources:
   - webserver/deployment.yaml
   - webserver/service.yaml
   - webserver/ingress.yaml
-  - ingress-controller/controller.yaml
+  # - ingress-controller/controller.yaml
