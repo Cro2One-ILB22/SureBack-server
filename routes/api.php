@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('check', [Controller::class, 'check']);
+
 Route::group([
     'prefix' => 'auth'
 ], function ($router) {

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\CorporateInstagram;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,6 +33,7 @@ class TestJob implements ShouldQueue
      */
     public function handle()
     {
+        CorporateInstagram::first()->id;
         info($this->data);
         info("Job is consumed");
     }

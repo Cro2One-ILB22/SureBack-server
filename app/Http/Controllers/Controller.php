@@ -15,17 +15,25 @@ class Controller extends BaseController
 
     public function index()
     {
+        return view('welcome');
+    }
+
+    public function check()
+    {
         // command
         // Artisan::call('test:start', [
         //     'something' => 'test'
         // ]);
 
-        // $data = [
-        //     'name' => 'test',
-        //     'success' => true
-        // ];
-        // $json = json_encode($data);
-        // TestJob::dispatch($json);
-        return view('welcome');
+        $data = [
+            'name' => 'check',
+            'success' => true
+        ];
+        $json = json_encode($data);
+        TestJob::dispatch($json);
+
+        return response()->json([
+            'message' => 'Job is dispatched'
+        ]);
     }
 }
